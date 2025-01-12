@@ -1,13 +1,12 @@
-import SignIn from '../components/Auth/SignIn';
+import SignIn from '../components/Auth/SignInComponent/SignInComponent';
+import loginImage from '../assets/loginpageimage.jpg'; // Correctly import the image
 
 const SignInPage = () => {
     return (
         <div className="h-screen grid grid-cols-2">
             {/* Left Section */}
-            <div
-                className="relative bg-cover bg-center"
-                style={{ backgroundImage: "url('/path-to-your-football-image.jpg')" }}
-            >
+            <div className="relative ">
+                <img src={loginImage} alt="Login" className="w-full max-h-screen object-cover bg-top" />
                 {/* Dark overlay */}
                 <div className="absolute inset-0 bg-black bg-opacity-40"></div>
             </div>
