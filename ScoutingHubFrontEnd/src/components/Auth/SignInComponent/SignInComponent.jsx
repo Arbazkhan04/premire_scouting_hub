@@ -1,0 +1,23 @@
+import AuthCard from '../../Shared/AuthCard';
+import AuthForm from '../../Shared/AuthForm';
+
+const SignInComponent = () => {
+    return (
+        <div className="h-full flex flex-col items-center justify-center space-y-6">
+            <div className="text-center">
+                <h1 className="text-3xl font-bold text-white mb-2">Welcome Back!</h1>
+                <p className="text-white/75">Please enter your email and password to sign in.</p>
+            </div>
+            <AuthCard>
+                <AuthForm
+                    formType="signin"
+                    buttonText="SIGN IN"
+                    footerText="Don't have an account?"
+                    footerLink="/signup"
+                />
+            </AuthCard>
+        </div>
+    );
+};
+
+export default SignInComponent;
