@@ -1,21 +1,70 @@
-const express = require('express');
-const passport = require('passport');
-const {register, login, changePassword, googleSignIn, logout} = require('../controllers/authController');
+const express = require("express");
+const passport = require("passport");
+const { OAuth2Client } = require('google-auth-library');
+const User = require("../models/userModel.js");
+const {
+  register,
+  login,
+  changePassword,
+  logout,
+} = require("../controllers/authController");
 
 const router = express.Router();
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Normal Authentication
-router.post('/register', register);
-router.post('/login', login);
-router.post('/change-password', changePassword);
+router.post("/register", register);
+router.post("/login", login);
+router.post("/change-password", changePassword);
 
-// Google Sign-In
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+// Google Authentication
+router.post('/google', async (req, res) => {
+  const { token } = req.body;
+  console.log('Received token:', token);
+  
+  let payload;
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID, // Use the environment variable
+    });
+    console.log('Verification ticket:', ticket);
+    payload = ticket.getPayload();
+    console.log('Payload:', payload);
+  } catch (error) {
+    console.error('Error verifying token:', error);
+    return res.status(200).json({ error: 'Invalid token' });
+  }
 
-// Google Callback
-router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/' }), googleSignIn);
+  const { email, name } = payload;
+  console.log('Processing user:', name);
+
+  try {
+    // Check if the user exists in the database
+    let user = await User.findOne({ email });
+
+    // If the user does not exist, create a new one
+    if (!user) {
+      user = new User({ email, name });
+      await user.save(); // Save the new user to the database
+      console.log('User created:', user);
+    } else {
+      console.log('User already exists');
+    }
+    // token
+    const token = user.createJWT();
+    const userInfo = { token, user };
+    // Send the response once
+    res.status(200).json({ message: 'User processed successfully', userInfo });
+  } catch (error) {
+    console.error('Error with Google sign-in:', error);
+    if (!res.headersSent) { // Ensure that headers haven't been sent before sending an error response
+      res.status(200).json({ error: 'Internal server error' });
+    }
+  }
+});
 
 // Logout
-router.get('/logout', logout);
+router.get("/logout", logout);
 
 module.exports = router;

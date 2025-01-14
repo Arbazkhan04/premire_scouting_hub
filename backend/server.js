@@ -4,24 +4,24 @@ const passport = require('passport');
 const session = require('express-session'); 
 const passportConfiguration = require('./utils/passportConfiguration');
 const mongoose = require('mongoose');
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
 
 const app = express();
 
-// configuring passport for google strategy
-passportConfiguration();
-
+// setting up cors
+app.use(
+    cors({
+      credentials: true,
+      origin: 'http://localhost:5173',
+      methods: ["GET", "POST", "PUT", "DELETE"],
+    })
+  );
 
 // middlewares
 app.use(express.json());
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
-
-app.use(session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true
-}));
-app.use(passport.initialize());
-app.use(passport.session());
 
 
 // routes
