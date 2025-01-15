@@ -1,18 +1,25 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import SignInPage from '../pages/SignInPage';
-import SignUpPage from '../pages/SignUpPage'; // Ensure default export is used
-
+import SignUpPage from '../pages/SignUpPage';
+import DashboardPage from '../pages/DashboardPage';
+import PlayerTeamFavourites from '../components/PlayerTeamFavComponent/PlayerTeamFavorites';
+import AccountSetting from '../components/AccountSettingComponent/AccountSetting';
 
 const AppRoutes = () => {
-    
-
     return (
         <Routes>
+            {/* Authentication Routes */}
             <Route path="/" element={<SignInPage />} />
             <Route path="/signin" element={<SignInPage />} />
             <Route path="/signup" element={<SignUpPage />} />
-            <Route path="/welcome" element={<h1>Welcome</h1>} />
-            
+
+            {/* Dashboard Routes */}
+            <Route path="/dashboard" element={<DashboardPage />}>
+                {/* Redirect to account-setting */}
+                <Route index element={<Navigate to="/dashboard/account-setting" replace />} />
+                <Route path="player-team-favourites" element={<PlayerTeamFavourites />} />
+                <Route path="account-setting" element={<AccountSetting />} />
+            </Route>
         </Routes>
     );
 };
