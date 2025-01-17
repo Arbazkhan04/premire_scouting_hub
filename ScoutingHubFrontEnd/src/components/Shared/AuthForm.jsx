@@ -2,10 +2,9 @@ import PropTypes from 'prop-types';
 import SocialAuthButtons from './SocialAuthButtons';
 import ToggleButton from '../Shared/ToggleButton';
 import { useState } from 'react';
+import AuthInput from './AuthInput';
 
 const AuthForm = ({ formType, buttonText, footerText, footerLink, onLogin, onSignup }) => {
-
-
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -13,67 +12,50 @@ const AuthForm = ({ formType, buttonText, footerText, footerLink, onLogin, onSig
     const handleSubmit = (e) => {
         e.preventDefault();
         if (formType === 'signup' && onSignup) {
-            onSignup(name, email, password); // Pass name, email, and password for signup
+            onSignup(name, email, password);
         } else if (formType === 'signin' && onLogin) {
-            onLogin(email, password); // Pass email and password for login
+            onLogin(email, password);
         }
     };
 
     return (
-        <form onSubmit={handleSubmit}>
+        <form
+            onSubmit={handleSubmit}
+            className="flex flex-col items-center justify-center space-y-4 w-full"
+        >
             <SocialAuthButtons />
-            <div className="text-center my-4 text-gray-500">or</div>
+            <div className="text-center my-2 text-gray-500">or</div>
 
-            {/* Conditionally render the Name input for signup */}
             {formType === 'signup' && (
-                <div className="mb-4">
-                    <label className="block text-white text-sm mb-2" htmlFor="name">Name</label>
-                    <input
-                        id="name"
-                        type="text"
-                        placeholder="Your full name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="w-full px-4 py-2 border rounded-lg text-white bg-transparent focus:outline-none focus:ring-2 focus:ring-primary mb-4"
-                    />
-                </div>
+                <AuthInput
+                    type="text"
+                    placeholder="Your full name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                />
             )}
+            <AuthInput
+                type="email"
+                placeholder="Your email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+            />
+            <AuthInput
+                type="password"
+                placeholder="Your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+            />
 
-            <div className="mb-4">
-                <label className="block text-white text-sm mb-2" htmlFor="email">Email</label>
-                <input
-                    id="email"
-                    type="email"
-                    placeholder="Your email address"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-4 py-2 border rounded-lg text-white bg-transparent focus:outline-none focus:ring-2 focus:ring-primary mb-4"
-                />
-            </div>
-
-            <div className="mb-4">
-                <label className="block text-white text-sm mb-2" htmlFor="password">Password</label>
-                <input
-                    id="password"
-                    type="password"
-                    placeholder="Your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-4 py-2 border rounded-lg text-white bg-transparent focus:outline-none focus:ring-2 focus:ring-primary mb-4"
-                />
-            </div>
-
-            {/* Only render the ToggleButton for signin */}
             {formType === 'signin' && (
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between w-full mb-4">
                     <ToggleButton label="Remember Me" />
                 </div>
             )}
 
-
             <button
                 type="submit"
-                className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+                className="w-full bg-blue-600 text-white py-1 rounded-lg hover:bg-blue-700"
             >
                 {buttonText}
             </button>
@@ -88,14 +70,13 @@ const AuthForm = ({ formType, buttonText, footerText, footerLink, onLogin, onSig
     );
 };
 
-// Add PropTypes validation
 AuthForm.propTypes = {
-    formType: PropTypes.string.isRequired,     // Ensures the formType is passed and is a string
-    buttonText: PropTypes.string.isRequired,  // Ensures buttonText is passed and is a string
-    footerText: PropTypes.string.isRequired,  // Ensures footerText is passed and is a string
-    footerLink: PropTypes.string.isRequired,  // Ensures footerLink is passed and is a string
-    onSignup: PropTypes.func, // Signup handler
-    onLogin: PropTypes.func,  // Login handler
+    formType: PropTypes.string.isRequired,
+    buttonText: PropTypes.string.isRequired,
+    footerText: PropTypes.string.isRequired,
+    footerLink: PropTypes.string.isRequired,
+    onSignup: PropTypes.func,
+    onLogin: PropTypes.func,
 };
 
 export default AuthForm;

@@ -3,9 +3,9 @@ import loginImage from '../assets/loginpageimage.jpg'; // Correctly import the i
 
 const SignUpPage = () => {
     return (
-        <div className="h-screen grid grid-cols-2">
+        <div className="h-screen  flex flex-col-reverse lg:grid lg:grid-cols-2 overflow-hidden">
             {/* Left Section */}
-            <div className="relative overflow-hidden">
+            <div className="relative h-[40vh] lg:h-screen">
                 <img
                     src={loginImage}
                     alt="Signup"
@@ -16,7 +16,7 @@ const SignUpPage = () => {
             </div>
 
             {/* Right Section */}
-            <div className="flex items-center justify-center bg-gradient-to-b from-blue-800 to-blue-900">
+            <div className="flex items-center justify-center bg-gradient-to-b from-blue-800 to-blue-900 h-[60vh] lg:h-screen">
                 <SignUpComponent />
             </div>
         </div>

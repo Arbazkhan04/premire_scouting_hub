@@ -1,6 +1,6 @@
 import { useState } from "react";
-import SearchAndAdd from "../SearchAndAdd";
-import CardList from "../CardList";
+import SearchAndAdd from "../Shared/SearchAndAdd";
+import CardList from "../Shared/CardList";
 import PlayerData from "./PlayerData";
 import TeamData from "./TeamData";
 
