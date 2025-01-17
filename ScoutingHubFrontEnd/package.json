@@ -13,12 +13,17 @@
     "@react-oauth/google": "^0.12.1",
     "@reduxjs/toolkit": "^2.5.0",
     "axios": "^1.7.9",
+    "framer-motion": "^11.18.0",
     "prop-types": "^15.8.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-icons": "^5.4.0",
+    "react-modal": "^3.16.3",
+    "react-pro-sidebar": "^1.1.0",
     "react-redux": "^9.2.0",
-    "react-router-dom": "^7.1.1"
+    "react-responsive-modal": "^6.4.2",
+    "react-router-dom": "^7.1.1",
+    "react-transition-group": "^4.4.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
