@@ -1,13 +1,9 @@
 const express = require("express");
-const passport = require("passport");
 const { OAuth2Client } = require('google-auth-library');
 const User = require("../models/userModel.js");
-const {
-  register,
-  login,
-  changePassword,
-  logout,
-} = require("../controllers/authController");
+const { register, login, changePassword, logout,
+    updateUsername, updateProfilePicture } = require("../controllers/authController");
+const { authenticate } = require("../middlewares/authentication.js");
 
 const router = express.Router();
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -15,7 +11,12 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // Normal Authentication
 router.post("/register", register);
 router.post("/login", login);
-router.post("/change-password", changePassword);
+
+// user management
+router.post('/changePassword', authenticate, changePassword)
+router.post('/updateUsername', authenticate, updateUsername)
+router.post('/updateProfilePicture', authenticate, updateProfilePicture)
+
 
 // Google Authentication
 router.post('/google', async (req, res) => {

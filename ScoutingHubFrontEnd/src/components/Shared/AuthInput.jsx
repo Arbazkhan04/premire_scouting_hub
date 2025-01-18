@@ -8,7 +8,7 @@ const AuthInput = ({ type, placeholder, value, onChange }) => {
                 placeholder={placeholder}
                 value={value}
                 onChange={onChange}
-                className="w-full px-2 py-1 lg:px-4 lg:py-2 border border-gray-300 rounded-lg text-gray-700 bg-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent mb-4 placeholder:text-xs lg:placeholder:text-base"
+                className="w-full px-2 py-1 lg:px-4 lg:py-2 border border-gray-300 rounded-lg text-white bg-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent mb-4 placeholder:text-xs lg:placeholder:text-base"
             />
         </div>
     );

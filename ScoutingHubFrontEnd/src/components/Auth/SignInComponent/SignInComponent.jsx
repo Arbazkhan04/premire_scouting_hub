@@ -4,20 +4,29 @@ import { useNavigate } from 'react-router-dom';
 import { useLoginMutation } from '../../../slices/usersApiSlice';
 import { setCredentials } from '../../../slices/authSlice';
 import { useDispatch } from 'react-redux';
+import { useState } from 'react';
 
 const SignInComponent = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
     const [login, { isLoading }] = useLoginMutation();
+    const [error, setError] = useState(null); // State to track errors
 
     const handleLogin = async (email, password) => {
+        setError(null);
         try {
             const response = await login({ email, password }).unwrap();
+            if (response.error) {
+                console.error('Login failed:', response.error);
+                setError(response.error);
+                return;
+            }
             dispatch(setCredentials(response));
-            navigate('/welcome'); // Redirect after successful login
+            navigate('/dashboard'); // Redirect after successful login
         } catch (error) {
             console.error('Login failed:', error);
+            setError(error.data?.error || 'Login failed. Please try again.');
         }
     };
 
@@ -37,6 +46,8 @@ const SignInComponent = () => {
                         footerText="Don't have an account?"
                         footerLink="/signup"
                         onLogin={handleLogin}
+                        error={error} // Pass the error state to AuthForm
+                        isLoading={isLoading} // Disable the submit button during loading
                     />
                 </AuthCard>
             </div>

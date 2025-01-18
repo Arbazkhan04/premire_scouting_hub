@@ -15,7 +15,7 @@ const SignUpComponent = () => {
         try {
             const response = await register({ name, email, password }).unwrap();
             dispatch(setCredentials(response));
-            navigate('/welcome');
+            navigate('/dashboard');
         } catch (error) {
             console.error('Signup failed:', error);
         }
