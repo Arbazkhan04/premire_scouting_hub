@@ -1,8 +1,11 @@
 import { FaCog, FaHeart } from "react-icons/fa";
 import ProfileSection from "../Shared/ProfileSection";
 import SettingCard from "../Shared/SettingCard";
+import { useNavigate } from "react-router-dom";
 
 const AccountSettingComponent = () => {
+    const navigate = useNavigate();
+
     return (
         <div className="min-h-screen bg-gradient-to-b from-blue-800 to-blue-900 text-white p-6">
             {/* Title */}
@@ -20,14 +23,14 @@ const AccountSettingComponent = () => {
                     icon={<FaCog />}
                     title="Setting"
                     iconColor="blue-400"
-                    onClick={() => console.log("Setting clicked")}
+                    onClick={() => navigate('/dashboard/setting')}
                 />
                 {/* Favourite List Card */}
                 <SettingCard
                     icon={<FaHeart />}
                     title="Favourite List"
                     iconColor="purple-400"
-                    onClick={() => console.log("Favourite List clicked")}
+                    onClick={() => navigate('/dashboard/player-team-favourites')}
                 />
             </div>
         </div>

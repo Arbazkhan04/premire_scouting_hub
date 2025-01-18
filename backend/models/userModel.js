@@ -8,6 +8,7 @@ const UserSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, select: false }, // Null for Google users
+  profilePictureURL: { type: String, default: null },
 });
 
 UserSchema.pre('save', async function () {

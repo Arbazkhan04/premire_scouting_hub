@@ -1,4 +1,3 @@
-// src/Shared/EditProfileFields.js
 
 const EditProfileData = [
     { label: "Name", defaultValue: "John Deo", placeholder: "Enter your name" },
