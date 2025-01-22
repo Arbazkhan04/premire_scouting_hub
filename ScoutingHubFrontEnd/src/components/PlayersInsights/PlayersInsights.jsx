@@ -1,3 +1,4 @@
+
 import PlayerInsightSearchBar from "./PlayerInsightSearchBar";
 import PerformanceUpdates from "./PerformanceUpdates";
 import PlayersAreaChart from "../Shared/PlayersAreaChart";
@@ -20,12 +21,12 @@ const PlayersInsights = () => {
                 </div>
 
                 {/* Player Card */}
-                <div className="col-span-4">
+                <div className="col-span-12 sm:col-span-6 lg:col-span-4">
                     <PlayCard />
                 </div>
 
                 {/* Alerts Section */}
-                <div className="col-span-8">
+                <div className="col-span-12 sm:col-span-6 lg:col-span-8">
                     <AlertCard />
                 </div>
 
@@ -44,12 +45,12 @@ const PlayersInsights = () => {
                 </div>
 
                 {/* Table Section */}
-                <div className="col-span-8">
+                <div className=" col-span-12 xl:col-span-8">
                     <PlayersComparisonTable />
                 </div>
 
                 {/* Pie Chart Section */}
-                <div className="col-span-4">
+                <div className=" col-span-12 xl:col-span-4">
                     <PlayersPieChart />
                 </div>
             </div>
