@@ -39,7 +39,7 @@ const Header = () => {
     }, []);
 
     return (
-        <header className="sticky top-0 z-50 bg-[#001745] text-white shadow-lg">
+        <header className="sticky top-0 z-20 bg-[#001745] text-white shadow-lg">
             <div className="flex items-center justify-between px-6 py-4">
                 {/* Hamburger Menu Icon (visible below 1024px, on the left) */}
                 <div className="lg:hidden">
