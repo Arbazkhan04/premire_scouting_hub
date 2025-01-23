@@ -44,7 +44,7 @@ const PlayersComparison = () => {
     }, []);
 
     return (
-        <div className="bg-blue-900 p-4 rounded-lg col-span-12 flex justify-between items-center">
+        <div className="bg-transparent p-4 rounded-lg col-span-12 flex justify-between items-center">
             {/* Left Section: Title */}
             <h2 className="text-lg font-bold text-white">Players Comparison</h2>
 
@@ -67,7 +67,7 @@ const PlayersComparison = () => {
                         isOpen={isPlayerADropdownOpen}
                         options={playersData}
                         onSelect={(player) => handleSelectPlayerA(player)}
-                        menuClassName="bg-white text-blue-900 mt-2 w-[120px]" // Increased width
+                        menuClassName="bg-white text-blue-900 mt-2 w-[180%]" // Increased width
                     />
                 </div>
 
@@ -88,7 +88,7 @@ const PlayersComparison = () => {
                         isOpen={isPlayerBDropdownOpen}
                         options={playersData}
                         onSelect={(player) => handleSelectPlayerB(player)}
-                        menuClassName="bg-white text-blue-900 mt-2 w-[120px]" // Increased width
+                        menuClassName="bg-white text-blue-900 mt-2 w-[180%]" // Increased width
                     />
                 </div>
             </div>

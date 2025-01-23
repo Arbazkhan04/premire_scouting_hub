@@ -8,7 +8,8 @@ import SettingsPage from '../pages/SettingsPage';
 import ProtectedRoute from './ProtectedRoutes.jsx';
 import GuestRoute from './GuestRoutes.jsx';
 import { useSelector } from 'react-redux';
-import PlayersInsights from '../components/PlayersInsights/PlayersInsightsMain.jsx';
+import PlayersInsightsMain from '../components/PlayersInsights/PlayersInsightsMain.jsx';
+import TeamInsightMain from '../components/TeamInsight/TeamInsightMain.jsx';
 
 const AppRoutes = () => {
     const { userInfo } = useSelector((state) => state.auth);
@@ -19,8 +20,8 @@ const AppRoutes = () => {
             <Route path="/" element={<GuestRoute><SignInPage /></GuestRoute>} />
             <Route path="/signin" element={<GuestRoute><SignInPage /></GuestRoute>} />
             <Route path="/signup" element={<GuestRoute><SignUpPage /></GuestRoute>} />
-            <Route path="/player-insight" element={<GuestRoute><PlayersInsights /></GuestRoute>} />
-            <Route path="player-team-favourites" element={<GuestRoute><PlayerTeamFavourites /></GuestRoute>} />
+            <Route path="/player-insight" element={<GuestRoute><PlayersInsightsMain /></GuestRoute>} />
+            <Route path="/team-insight" element={<GuestRoute><TeamInsightMain /></GuestRoute>} />
 
 
             {/* Dashboard and Protected Routes */}
