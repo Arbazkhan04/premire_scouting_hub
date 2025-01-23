@@ -1,18 +1,16 @@
-
-import PlayerInsightSearchBar from "./PlayerInsightSearchBar";
-import PerformanceUpdates from "./PerformanceUpdates";
+import PlayerCard from "../Shared/PlayerCard";
+import { PlayerCardData } from "./PlayerData"; // Import single player data
+import AlertCard from "./AlertCard";
+import PlayerInsightSearchBar from "../Shared/PlayerInsightSearchBar";
 import PlayersAreaChart from "../Shared/PlayersAreaChart";
 import PlayersComparison from "./PlayersComparison";
 import PlayersPieChart from "../Shared/PlayersPieChart";
-import PlayCard from "../Shared/PlayCard";
 import PlayersComparisonTable from "../Shared/PlayersComparisonTable";
-import AlertCard from "./AlertCard";
 
 
 const PlayersInsights = () => {
     return (
         <div className="text-white overflow-clip">
-
             {/* Grid Section */}
             <div className="px-6 py-6 grid grid-cols-12 gap-6">
                 {/* Player Insight Search Bar */}
@@ -20,9 +18,18 @@ const PlayersInsights = () => {
                     <PlayerInsightSearchBar />
                 </div>
 
-                {/* Player Card */}
+                {/* Single Player Card */}
                 <div className="col-span-12 sm:col-span-6 lg:col-span-4">
-                    <PlayCard />
+                    <PlayerCard
+                        name={PlayerCardData.name}
+                        age={PlayerCardData.age}
+                        nationality={PlayerCardData.nationality}
+                        position={PlayerCardData.position}
+                        totalGoals={PlayerCardData.totalGoals}
+                        assists={PlayerCardData.assists}
+                        points={PlayerCardData.points}
+                        image={PlayerCardData.image}
+                    />
                 </div>
 
                 {/* Alerts Section */}
@@ -32,11 +39,6 @@ const PlayersInsights = () => {
 
                 {/* Performance Updates */}
                 <div className="col-span-12">
-                    <PerformanceUpdates />
-                </div>
-
-                {/* Performance Chart */}
-                <div className="col-span-12">
                     <PlayersAreaChart />
                 </div>
 
@@ -45,12 +47,12 @@ const PlayersInsights = () => {
                 </div>
 
                 {/* Table Section */}
-                <div className=" col-span-12 xl:col-span-8">
+                <div className="col-span-12 xl:col-span-8">
                     <PlayersComparisonTable />
                 </div>
 
                 {/* Pie Chart Section */}
-                <div className=" col-span-12 xl:col-span-4">
+                <div className="col-span-12 xl:col-span-4">
                     <PlayersPieChart />
                 </div>
             </div>
