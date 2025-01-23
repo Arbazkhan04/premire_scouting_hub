@@ -12,7 +12,7 @@ const DropDownMenu = ({ isOpen, options, onSelect, menuClassName }) => {
                     transition={{ duration: 0.3 }}
                     className={`absolute left-0 mt-1 w-full rounded-lg shadow-lg z-50 ${menuClassName}`}
                 >
-                    <ul className="py-2 px-">
+                    <ul className="py-2 bg-blue-950">
                         {options.map((item) => (
                             <li
                                 key={item.id}

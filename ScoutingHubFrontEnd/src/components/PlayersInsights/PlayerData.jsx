@@ -34,4 +34,15 @@ export const areaChartData = [
     { name: "Match 6", teamA: 30, teamB: 20, date: "Dec 7" },
 ];
 
+export const PlayerCardData = {
+    name: "John Deo",
+    age: 36,
+    nationality: "Argentina",
+    position: "Forward",
+    totalGoals: 10,
+    assists: 5,
+    points: 8,
+    image: "/public/assets/accountsetting.jpg",
+};
+
 export default PlayerData;
