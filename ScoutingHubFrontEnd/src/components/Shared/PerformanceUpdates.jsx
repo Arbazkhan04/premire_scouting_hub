@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import DropDownMenu from "../Shared/DropDownMenu"; // Import the reusable dropdown component
-import playersData from "./PlayerData"; // Import the separated players data
+import DropDownMenu from "./DropDownMenu"; // Import the reusable dropdown component
+import playersData from "../PlayersInsights/PlayerData"; // Import the separated players data
 import { FaChevronDown, FaChevronUp } from "react-icons/fa"; // Import the arrow icons
 
 const PerformanceUpdates = () => {

@@ -1,7 +1,7 @@
 import PropTypes from "prop-types";
 import { motion, AnimatePresence } from "framer-motion";
 
-const DropDownMenu = ({ isOpen, options, onSelect, menuClassName }) => {
+const DropDownMenu = ({ isOpen, options, onSelect, menuClassName = "bg-white text-blue-900" }) => {
     return (
         <AnimatePresence>
             {isOpen && (
@@ -16,7 +16,7 @@ const DropDownMenu = ({ isOpen, options, onSelect, menuClassName }) => {
                         {options.map((item) => (
                             <li
                                 key={item.id}
-                                className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
+                                className="px-4 py-2 hover:bg-blue-100 cursor-pointer text-white hover:text-blue-950"
                                 onClick={() => onSelect(item)}
                             >
                                 {item.label}
@@ -39,10 +39,6 @@ DropDownMenu.propTypes = {
     ).isRequired,
     onSelect: PropTypes.func.isRequired,
     menuClassName: PropTypes.string,
-};
-
-DropDownMenu.defaultProps = {
-    menuClassName: "bg-white text-blue-900",
 };
 
 export default DropDownMenu;

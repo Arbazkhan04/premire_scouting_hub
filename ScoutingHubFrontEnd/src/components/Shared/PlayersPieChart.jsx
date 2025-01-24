@@ -3,7 +3,7 @@ import { pieChartData } from "../PlayersInsights/PlayerData"; // Import pie char
 
 const PlayersPieChart = () => {
     return (
-        <div className="bg-blue-950 rounded-lg p-4 flex flex-col items-center">
+        <div className="bg-blue-950 rounded-lg p-4 flex flex-col items-center h-full">
             <PieChart width={450} height={380}>
                 <Pie
                     data={pieChartData}

@@ -25,7 +25,7 @@ export const pieChartData = [
     { name: "Grey", value: 10, color: "#6b7280" },  // Grey
 ];
 
-export const areaChartData = [
+export const AreaChartData = [
     { name: "Match 1", teamA: 20, teamB: 30, date: "Dec 2" },
     { name: "Match 2", teamA: 40, teamB: 50, date: "Dec 3" },
     { name: "Match 3", teamA: 60, teamB: 40, date: "Dec 4" },
