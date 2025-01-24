@@ -7,20 +7,20 @@ import {
     Tooltip,
     ResponsiveContainer,
 } from "recharts";
-import { areaChartData } from "../PlayersInsights/PlayerData"; // Import the area chart data
+import PropTypes from "prop-types";
 
-const PlayersAreaChart = () => {
+const PlayersAreaChart = ({ data }) => {
     return (
         <div className="bg-blue-950 rounded-lg p-4">
             <ResponsiveContainer width="100%" height={300}>
                 <AreaChart
-                    data={areaChartData} // Use the imported data
+                    data={data}
                     margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                 >
                     <CartesianGrid
                         strokeDasharray="2 2"
                         stroke="#3b4c7c"
-                        horizontal={true}
+                        horizontal
                         vertical={false}
                     />
                     <XAxis
@@ -70,6 +70,16 @@ const PlayersAreaChart = () => {
             </ResponsiveContainer>
         </div>
     );
+};
+
+PlayersAreaChart.propTypes = {
+    data: PropTypes.arrayOf(
+        PropTypes.shape({
+            name: PropTypes.string.isRequired,
+            teamA: PropTypes.number.isRequired,
+            teamB: PropTypes.number.isRequired,
+        })
+    ).isRequired,
 };
 
 export default PlayersAreaChart;
