@@ -17,4 +17,4 @@ const TeamInsightMain = () => {
         </div>
     )
 }
-export default TeamInsightMain
+export default TeamInsightMain;

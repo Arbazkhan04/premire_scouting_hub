@@ -5,7 +5,8 @@ import PlayerInsightSearchBar from "../Shared/PlayerInsightSearchBar";
 import PlayersAreaChart from "../Shared/PlayersAreaChart";
 import PlayersComparison from "./PlayersComparison";
 import PlayersPieChart from "../Shared/PlayersPieChart";
-import PlayersComparisonTable from "../Shared/PlayersComparisonTable";
+import PlayerTable from "./PlayerTable";
+import { AreaChartData } from "./PlayerData";
 
 
 const PlayersInsights = () => {
@@ -39,7 +40,7 @@ const PlayersInsights = () => {
 
                 {/* Performance Updates */}
                 <div className="col-span-12">
-                    <PlayersAreaChart />
+                    <PlayersAreaChart data={AreaChartData} />
                 </div>
 
                 <div className="col-span-12">
@@ -48,7 +49,7 @@ const PlayersInsights = () => {
 
                 {/* Table Section */}
                 <div className="col-span-12 xl:col-span-8">
-                    <PlayersComparisonTable />
+                    <PlayerTable />
                 </div>
 
                 {/* Pie Chart Section */}
