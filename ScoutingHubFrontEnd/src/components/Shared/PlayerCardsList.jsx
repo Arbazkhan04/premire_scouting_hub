@@ -1,4 +1,4 @@
-import TeamPlayerCardData from "../TeamInsight/TeamPlayerCardData";
+import { TeamPlayerCardData } from "../TeamInsight/TeamInsightData";
 import PlayerCard from "./PlayerCard";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { useRef, useState } from "react";
