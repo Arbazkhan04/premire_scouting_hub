@@ -4,7 +4,7 @@ import PlayerCardsList from "../Shared/PlayerCardsList";
 import RosterAreaChart from "../Shared/RosterAreaChart";
 import PlayersAreaChart from "../Shared/PlayersAreaChart";
 import PlayerTable from "./PlayerTable";
-import { AreaChartData, TeamInsightTableData } from "./TeamInsightData"; // Import TeamInsightTableData
+import { AreaChartData, TeamInsightTableData, TeamPieChartData } from "./TeamInsightData"; // Import TeamInsightTableData and TeamPieChartData
 import PerformanceUpdates from "../Shared/PerformanceUpdates";
 import EarningBarChart from "../Shared/EarningBarChart";
 import PlayersPieChart from "../Shared/PlayersPieChart";
@@ -34,7 +34,7 @@ const TeamInsight = () => {
                 </div>
 
                 {/* Player Table */}
-                <div className="col-span-6">
+                <div className="col-span-12 lg:col-span-6">
                     <PlayerTable
                         headers={TeamInsightTableData.headers} // Pass headers
                         rows={TeamInsightTableData.rows} // Pass rows
@@ -42,7 +42,7 @@ const TeamInsight = () => {
                 </div>
 
                 {/* Roster Area Chart */}
-                <div className="col-span-6">
+                <div className="col-span-12 lg:col-span-6">
                     <RosterAreaChart />
                 </div>
 
@@ -62,15 +62,14 @@ const TeamInsight = () => {
                 </div>
 
                 {/* Earning Bar Chart */}
-                <div className="col-span-8">
+                <div className="col-span-12 2xl:col-span-8">
                     <EarningBarChart />
                 </div>
 
                 {/* Players Pie Chart */}
-                <div className="col-span-4">
-                    <PlayersPieChart />
+                <div className="col-span-12 2xl:col-span-4">
+                    <PlayersPieChart data={TeamPieChartData} /> {/* Pass TeamPieChartData as prop */}
                 </div>
-
             </div>
         </div>
     );
