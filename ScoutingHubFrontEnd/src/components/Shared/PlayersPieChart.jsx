@@ -1,24 +1,26 @@
 import { PieChart, Pie, Cell, Legend, Tooltip } from "recharts";
-import { pieChartData } from "../PlayersInsights/PlayerData"; // Import pie chart data
+import PropTypes from "prop-types"; // Import PropTypes for validation
 
-const PlayersPieChart = () => {
+const PlayersPieChart = ({ data }) => {
+    // Colors for the chart
+    const colorScheme = ["#3B82F6", "#22C55E", "#9CA3AF"]; // Blue, Green, Grey
+
     return (
         <div className="bg-blue-950 rounded-lg p-4 flex flex-col items-center h-full">
             <PieChart width={450} height={380}>
                 <Pie
-                    data={pieChartData}
+                    data={data}
                     dataKey="value"
                     cx="50%"
                     cy="45%"
                     innerRadius={80}
                     outerRadius={120}
                     paddingAngle={3}
-                    fill="#8884d8"
                     label={({ name, value }) => `${name}: ${value}%`}
                     labelLine={false}
                 >
-                    {pieChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
+                    {data.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={colorScheme[index % colorScheme.length]} />
                     ))}
                 </Pie>
                 <Tooltip
@@ -41,6 +43,16 @@ const PlayersPieChart = () => {
             </PieChart>
         </div>
     );
+};
+
+// Prop validation
+PlayersPieChart.propTypes = {
+    data: PropTypes.arrayOf(
+        PropTypes.shape({
+            name: PropTypes.string.isRequired,
+            value: PropTypes.number.isRequired,
+        })
+    ).isRequired,
 };
 
 export default PlayersPieChart;
