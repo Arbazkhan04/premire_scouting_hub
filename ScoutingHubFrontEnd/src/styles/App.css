@@ -1,0 +1,45 @@
+/* Hide Swiper default arrows */
+.swiper-button-prev,
+.swiper-button-next {
+    display: none !important;
+}
+
+/* Custom Arrow Styling */
+.custom-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    background-color: #1e3a8a;
+    /* Blue color */
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease;
+}
+
+/* Left Arrow */
+.custom-prev {
+    left: -10px;
+    /* Adjust to ensure no overlap */
+}
+
+/* Right Arrow */
+.custom-next {
+    right: -10px;
+    /* Adjust to ensure no overlap */
+}
+
+/* Hover Effects */
+.custom-arrow:hover {
+    background-color: #2563eb;
+    box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2);
+}
