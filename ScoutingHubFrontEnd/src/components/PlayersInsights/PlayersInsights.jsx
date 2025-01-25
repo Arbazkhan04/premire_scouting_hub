@@ -1,5 +1,5 @@
 import PlayerCard from "../Shared/PlayerCard";
-import { PlayerCardData } from "./PlayerData"; // Import single player data
+import { PlayerCardData, pieChartData } from "./PlayerData"; // Import data
 import AlertCard from "./AlertCard";
 import PlayerInsightSearchBar from "../Shared/PlayerInsightSearchBar";
 import PlayersAreaChart from "../Shared/PlayersAreaChart";
@@ -7,7 +7,6 @@ import PlayersComparison from "./PlayersComparison";
 import PlayersPieChart from "../Shared/PlayersPieChart";
 import PlayerTable from "./PlayerTable";
 import { AreaChartData } from "./PlayerData";
-
 
 const PlayersInsights = () => {
     return (
@@ -54,7 +53,7 @@ const PlayersInsights = () => {
 
                 {/* Pie Chart Section */}
                 <div className="col-span-12 xl:col-span-4">
-                    <PlayersPieChart />
+                    <PlayersPieChart data={pieChartData} /> {/* Pass pieChartData as prop */}
                 </div>
             </div>
         </div>

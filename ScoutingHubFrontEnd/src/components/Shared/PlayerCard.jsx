@@ -2,7 +2,7 @@ import PropTypes from "prop-types";
 
 const PlayerCard = ({ name, age, nationality, position, totalGoals, assists, points, image }) => {
     return (
-        <div className="bg-[#041139] p-6 rounded-lg flex flex-col items-center shadow-lg">
+        <div className="bg-[#041139] p-6 h-[400px] rounded-lg flex flex-col items-center shadow-lg">
             {/* Player Image */}
             <img
                 src={image}
