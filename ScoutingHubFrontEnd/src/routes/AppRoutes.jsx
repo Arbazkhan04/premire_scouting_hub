@@ -10,6 +10,7 @@ import GuestRoute from './GuestRoutes.jsx';
 import { useSelector } from 'react-redux';
 import PlayersInsightsMain from '../components/PlayersInsights/PlayersInsightsMain.jsx';
 import TeamInsightMain from '../components/TeamInsight/TeamInsightMain.jsx';
+import SubscriptionMain from '../components/Subscription/SubscriptionMain';
 
 const AppRoutes = () => {
     const { userInfo } = useSelector((state) => state.auth);
@@ -22,6 +23,7 @@ const AppRoutes = () => {
             <Route path="/signup" element={<GuestRoute><SignUpPage /></GuestRoute>} />
             <Route path="/player-insight" element={<GuestRoute><PlayersInsightsMain /></GuestRoute>} />
             <Route path="/team-insight" element={<GuestRoute><TeamInsightMain /></GuestRoute>} />
+            <Route path="/subscription" element={<GuestRoute><SubscriptionMain /></GuestRoute>} />
 
 
             {/* Dashboard and Protected Routes */}
