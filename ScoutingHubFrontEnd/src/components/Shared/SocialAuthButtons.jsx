@@ -39,21 +39,13 @@ const SocialAuthButtons = () => {
 
   return (
     <div className="flex justify-center space-x-4 mb-4">
-      {/* Google Button */}
-
-      <div className="w-12 h-12 lg:w-16 lg:h-16 rounded-lg bg-gradient-to-r from-white to-gray-400 p-[2px]">
-        <button
-          className="w-full h-full bg-blue-900 text-white rounded-lg flex items-center justify-center hover:bg-red-600"
-        //onClick={handleGoogleAuth}
-        >
-          <GoogleLogin
-            onSuccess={handleGoogleAuth}
-            onError={(error) => {
-              console.log("Google sign-in failed:", error);
-            }}
-          />
-          {/*<FaGoogle size={28} />*/}
-        </button>
+      <div className="w-12 h-12 lg:w-16 lg:h-16 flex items-center justify-center">
+        <GoogleLogin
+          onSuccess={handleGoogleAuth}
+          onError={(error) => {
+            console.log("Google sign-in failed:", error);
+          }}
+        />
       </div>
     </div>
   );
