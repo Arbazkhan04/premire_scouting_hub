@@ -8,6 +8,11 @@ const UserSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, select: false }, // Null for Google users
+  userRole: {
+    type: String,
+    enum: ["admin", "user"], // Allowed values
+    default: "user", // Default value
+  },
   profilePictureURL: { type: String, default: null },
 });
 
