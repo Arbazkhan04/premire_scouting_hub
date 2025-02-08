@@ -27,13 +27,17 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
 
-// Routes
+// User Management Routes
 const userManagementRoutes= require("./routes/authRoutes")
+
+//Soccer Routes
+const soccerPlayerManagement= require("./soccer/routes/playerManagement.routes")
 
 
 
 
 app.use('/api/v1/auth', userManagementRoutes);
+app.use('/api/v1/soccer/player', soccerPlayerManagement)
 
 
 
