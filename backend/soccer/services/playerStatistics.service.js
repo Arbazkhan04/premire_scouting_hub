@@ -21,7 +21,9 @@ const fetchAndSaveAllPlayerStatistics = async (playerId) => {
       }
   
       // Sort the seasons array in descending order (top years to lower)
-      const sortedSeasons = playerProfile.seasons.sort((a, b) => b - a);
+      const sortedSeasons = playerProfile.seasons.sort((a, b) => b - a).slice(0,3);
+
+
   
       // Loop through the sorted seasons and fetch and save statistics for each season
       for (const season of sortedSeasons) {
