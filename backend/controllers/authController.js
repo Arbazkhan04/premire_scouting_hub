@@ -143,6 +143,10 @@ const register = async (req, res, next) => {
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+    if(!email || !password){
+      throw new CustomError("playerId is required", 400);
+      
+    }
     const result = await loginUser({ email, password });
     responseHandler(res, 200, 'User logged in successfully', result);
   } catch (error) {
@@ -156,7 +160,12 @@ const login = async (req, res, next) => {
  */
 const changePassword = async (req, res, next) => {
   try {
-    const { userId, currentPassword, newPassword } = req.body;
+    const userId=req.user.userId;
+    const { currentPassword, newPassword } = req.body;
+    if(!currentPassword || !newPassword){
+      throw new CustomError("current Password and new Password is required", 400);
+      
+    }
     const result = await changeUserPassword({ userId, currentPassword, newPassword });
     responseHandler(res, 200, result.message);
   } catch (error) {
