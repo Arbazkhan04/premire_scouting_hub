@@ -1,6 +1,32 @@
-const { searchPlayer,insertOrUpdatePlayer } = require('../services/playerManagement.service');
+const { searchPlayer,insertOrUpdatePlayer,getPlayerProfilewithStats } = require('../services/playerManagement.service');
 const responseHandler = require('../../utils/responseHandler');
 const CustomError=require('../../utils/customError')
+
+
+
+
+
+/**
+ * Controller to get Userprofile
+ */
+const getPlayerProfile = async (req, res, next) => {
+    try {
+      const {playerId} = req.query;
+  
+      if (!playerId) {
+        throw new CustomError("playerId is required", 400);
+      }
+  
+      const profile = await getPlayerProfilewithStats(playerId);
+      
+      responseHandler(res, 200, "Player inserted or updated successfully", profile);
+    } catch (error) {
+      console.error("Error in insertOrUpdatePlayerController:", error.message);
+      next(error instanceof CustomError ? error : new CustomError(error.message, 500));
+    }
+  };
+
+
 
 
 
@@ -41,4 +67,4 @@ const searchPlayerController = async (req, res, next) => {
   }
 };
 
-module.exports = { searchPlayerController ,insertOrUpdatePlayerController};
+module.exports = { searchPlayerController ,insertOrUpdatePlayerController,getPlayerProfile};
