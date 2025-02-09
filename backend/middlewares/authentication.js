@@ -20,10 +20,12 @@
 
 
 const jwt = require('jsonwebtoken');
+const CustomError= require('../utils/customError')
 
 const auth = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer')) {
+    // throw new CustomError("Access Denied",403)
    return res.json({ message: 'Access denied' });
   }
   const token = authHeader.split(' ')[1];
