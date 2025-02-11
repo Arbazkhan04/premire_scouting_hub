@@ -1,8 +1,16 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { saveTeams } = require('../controllers/teams.controller');
+const { saveTeams,searchTeamController, getTeamByTeamIdController } = require("../controllers/teams.controller");
+const {
+  processTeamStatisticsController,
+} = require("../controllers/teamStatistics.controller");
 
-// Route for fetching and saving teams
-router.get('/fetchandSaveAllTeams', saveTeams);
+
+router.get("/fetchandSaveAllTeams", saveTeams);
+router.get("/processTeamStats", processTeamStatisticsController);
+router.get('/searchTeam', searchTeamController);
+
+
+router.get('/getTeambyTeamId', getTeamByTeamIdController);
 
 module.exports = router;

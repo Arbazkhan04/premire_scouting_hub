@@ -8,11 +8,11 @@ const SoccerTeamSchema = new mongoose.Schema(
       unique: true,
     },
     name: {
-      type: String,
+      type: String, 
       required: true,
     },
     code: {
-      type: String, // Team short code
+      type: String,
     },
     country: {
       type: String,
@@ -42,7 +42,7 @@ const SoccerTeamSchema = new mongoose.Schema(
   
   },
   {
-    timestamps: true, // Automatically adds createdAt and updatedAt fields
+    timestamps: true, 
   }
 );
 

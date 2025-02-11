@@ -1,5 +1,9 @@
 const axios = require("axios");
-const CustomError = require("../utils/CustomError"); // Ensure you have your custom error class
+const CustomError = require("../../utils/customError"); // Ensure you have your custom error class
+const SoccerTeamStatistics=require("../models/teamStatistics.model")
+const Team = require("../models/team.model");
+const League = require("../models/league.model");
+
 
 const fetchTeamStatistics = async (leagueId, season, teamId) => {
   try {
@@ -12,7 +16,7 @@ const fetchTeamStatistics = async (leagueId, season, teamId) => {
         team: teamId.toString(),
       },
       headers: {
-        "x-rapidapi-key": process.env.RAPIDAPI_KEY, // Use environment variables for security
+        "x-rapidapi-key": process.env.SOCCER_API_KEY, // Use environment variables for security
         "x-rapidapi-host": "api-football-v1.p.rapidapi.com",
       },
     };
@@ -46,10 +50,12 @@ const fetchTeamStatistics = async (leagueId, season, teamId) => {
 const saveTeamStatistics = async (data) => {
   try {
     // Extract relevant team statistics response
-    const teamStats = data.response;
-
+    const teamStats = data.data.response;
+// console.log(data.response)
     // Check if there is no data available
-    if (!teamStats || teamStats.fixtures?.played?.total === 0) {
+    if ((!teamStats) || teamStats.fixtures?.played?.total === 0) {
+      // console.log(teamStats.fixtures?.played?.total)
+      console.log("logic wrong")
       return { success: true, message: "No data available to save." };
     }
 
@@ -112,4 +118,52 @@ const saveTeamStatistics = async (data) => {
   }
 };
 
-module.exports = { fetchTeamStatistics, saveTeamStatistics };
+
+
+
+
+
+
+
+const processTeamStatistics = async (teamId) => {
+  try {
+    // Find the team document by teamId
+    const team = await Team.findOne({ teamId });
+    if (!team) {
+      throw new CustomError(`Team with ID ${teamId} not found`, 404);
+    }
+
+    // Loop through the leagues array in the team document
+    for (const leagueEntry of team.leagues) {
+      const leagueId = leagueEntry;
+
+      // Find the league document by leagueId
+      const league = await League.findOne({ leagueId });
+      if (!league) {
+        console.warn(`League with ID ${leagueId} not found. Skipping...`);
+        continue; // Skip if the league is not found
+      }
+
+      // Loop through the seasons array inside the league document
+      for (const season of league.seasons) {
+        try {
+          // Fetch team statistics for the current league and season
+          const statisticsData = await fetchTeamStatistics(leagueId, season.year, teamId);
+
+          // Save the statistics using the previously created method
+          await saveTeamStatistics(statisticsData);
+        } catch (error) {
+          console.error(`Error processing stats for team ${teamId}, league ${leagueId}, season ${season.year}:`, error);
+        }
+      }
+    }
+
+    return { success: true, message: "Team statistics processed successfully" };
+  } catch (error) {
+    throw new CustomError(error.message || "Failed to process team statistics", error.status || 500);
+  }
+};
+
+
+
+module.exports = { fetchTeamStatistics, saveTeamStatistics, processTeamStatistics };
