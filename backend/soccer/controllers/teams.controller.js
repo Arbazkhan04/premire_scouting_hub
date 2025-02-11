@@ -1,4 +1,4 @@
-const { fetchAndSaveTeams } = require('../services/teamManagement.service');
+const { fetchAndSaveTeams } = require('../services/teams.service');
 const responseHandler = require('../../utils/responseHandler');
 const CustomError = require('../../utils/customError');
 
