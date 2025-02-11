@@ -48,8 +48,8 @@ const LeagueSchema = new mongoose.Schema(
     ],
     teams: [
       {
-        type: mongoose.Schema.Types.ObjectId, // References Team Model
-        ref: "Team",
+        _id: { type: mongoose.Schema.Types.ObjectId, ref: "SoccerTeam" }, // Reference to Team document
+        teamId: { type: Number, required: true }, // API Team ID
       },
     ],
   },
