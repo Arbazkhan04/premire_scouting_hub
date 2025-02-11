@@ -38,6 +38,8 @@ const SoccerTeamSchema = new mongoose.Schema(
       image: { type: String },
     },
     seasons: [{ type: Number }], // Array of seasons (years)
+    leagues: [{ type: String, unique: true }], // Array of unique league IDs as strings
+  
   },
   {
     timestamps: true, // Automatically adds createdAt and updatedAt fields
