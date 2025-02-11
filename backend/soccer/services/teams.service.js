@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
-const SoccerTeam = require("../models/team.model")
-const SoccerLeague = require("../models/league.model")
+const SoccerTeam = require("../models/team.model");
+const SoccerLeague = require("../models/league.model");
 const axios = require("axios");
 const CustomError = require("../../utils/customError");
 
@@ -27,64 +27,68 @@ const fetchTeamSeasons = async (teamId) => {
   }
 };
 const saveTeamInfo = async (teamData, seasons, leagueId) => {
-    try {
-      const team = teamData.team;
-      const venue = teamData.venue;
-  
-      const teamInfo = {
-        teamId: team.id,
-        name: team.name,
-        code: team.code,
-        country: team.country,
-        founded: team.founded,
-        national: team.national,
-        logo: team.logo,
-        venue: venue
-          ? {
-              id: venue.id,
-              name: venue.name,
-              address: venue.address,
-              city: venue.city,
-              capacity: venue.capacity,
-              surface: venue.surface,
-              image: venue.image,
-            }
-          : {},
-        seasons: seasons,
-      };
-  
-      // Fetch existing team first
-      let existingTeam = await SoccerTeam.findOne({ teamId: team.id });
-  
-      if (!existingTeam) {
-        // Create new team with leagueId
-        existingTeam = new SoccerTeam({ ...teamInfo, leagues: [leagueId] });
-      } else {
-        // Ensure leagueId is not duplicated
-        if (!existingTeam.leagues.includes(leagueId)) {
-          existingTeam.leagues.push(leagueId);
-        }
-        Object.assign(existingTeam, teamInfo); // Update team details
+  try {
+    const team = teamData.team;
+    const venue = teamData.venue;
+
+    const teamInfo = {
+      teamId: team.id,
+      name: team.name,
+      code: team.code,
+      country: team.country,
+      founded: team.founded,
+      national: team.national,
+      logo: team.logo,
+      venue: venue
+        ? {
+            id: venue.id,
+            name: venue.name,
+            address: venue.address,
+            city: venue.city,
+            capacity: venue.capacity,
+            surface: venue.surface,
+            image: venue.image,
+          }
+        : {},
+      seasons: seasons,
+    };
+
+    // Fetch existing team first
+    let existingTeam = await SoccerTeam.findOne({ teamId: team.id });
+
+    if (!existingTeam) {
+      // Create new team with leagueId
+      existingTeam = new SoccerTeam({ ...teamInfo, leagues: [leagueId] });
+    } else {
+      // Ensure leagueId is not duplicated
+      if (!existingTeam.leagues.includes(leagueId)) {
+        existingTeam.leagues.push(leagueId);
       }
-  
-      // Save the updated team
-      const updatedTeam = await existingTeam.save();
-  
-      // Update League document: ensure unique team ID reference
-      await SoccerLeague.findOneAndUpdate(
-        { leagueId: leagueId },
-        { $addToSet: { teams: updatedTeam._id } }, // Ensures unique team references
-        { new: true }
-      );
-  
-      return updatedTeam; // Optionally return the updated team if needed for further processing
-    } catch (error) {
-      console.error("Error saving team data:", error.message);
-      // Throw custom error with a relevant message and status code
-      throw new CustomError("Failed to save team data", 500);
+      Object.assign(existingTeam, teamInfo); // Update team details
     }
-  };
-  
+
+    // Save the updated team
+    const updatedTeam = await existingTeam.save();
+
+    // Update League document: ensure unique team ID reference
+    const updateLeagueDocument = await SoccerLeague.findOneAndUpdate(
+      { leagueId: leagueId },
+      {
+        $addToSet: {
+          teams: { _id: updatedTeam._id, teamId: updatedTeam?.teamId },
+        },
+      }, // Ensures unique team references
+      { new: true }
+    );
+    console.log(updateLeagueDocument);
+
+    return updatedTeam; // Optionally return the updated team if needed for further processing
+  } catch (error) {
+    console.error("Error saving team data:", error.message);
+    // Throw custom error with a relevant message and status code
+    throw new CustomError("Failed to save team data", 500);
+  }
+};
 
 const fetchAndSaveTeams = async (leagueId, season) => {
   if (!leagueId || !season) {
@@ -106,7 +110,10 @@ const fetchAndSaveTeams = async (leagueId, season) => {
     const teams = response.data.response;
 
     if (!teams || teams.length === 0) {
-      throw new CustomError(`No teams found for League ID: ${leagueId} and Season: ${season}`, 404);
+      throw new CustomError(
+        `No teams found for League ID: ${leagueId} and Season: ${season}`,
+        404
+      );
     }
 
     for (const teamData of teams) {
