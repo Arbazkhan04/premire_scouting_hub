@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
-const SoccerTeam = mongoose.model("SoccerTeam");
-const SoccerLeague = mongoose.model("SoccerLeague");
+const SoccerTeam = require("../models/team.model")
+const SoccerLeague = require("../models/league.model")
 const axios = require("axios");
 const CustomError = require("../../utils/customError");
 
