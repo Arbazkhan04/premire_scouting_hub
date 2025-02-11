@@ -32,6 +32,7 @@ const userManagementRoutes= require("./routes/authRoutes")
 const favouritesManagementRoutes=require("./routes/favourites.routes")
 //Soccer Routes
 const soccerPlayerManagement= require("./soccer/routes/playerManagement.routes")
+const soccerLeagueManagment= require("./soccer/routes/leagues.routes")
 
 
 
@@ -39,6 +40,7 @@ const soccerPlayerManagement= require("./soccer/routes/playerManagement.routes")
 app.use('/api/v1/auth', userManagementRoutes);
 app.use('/api/v1/favourites',favouritesManagementRoutes)
 app.use('/api/v1/soccer/player', soccerPlayerManagement)
+app.use('/api/v1/soccer/league',soccerLeagueManagment)
 
 
 
