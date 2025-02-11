@@ -1,7 +1,7 @@
 const axios = require("axios");
 const CustomError = require("../../utils/customError"); // Import custom error class
 const League = require("../models/league.model");
-
+const soccerLeagues = require("../../utils/soccerLeagues");
 const RAPID_API_KEY = process.env.SOCCER_API_KEY;
 const RAPID_API_HOST = "https://api-football-v1.p.rapidapi.com";
 
@@ -44,7 +44,7 @@ const fetchAndSaveLeague = async (leagueId) => {
       },
       country: leagueData.country,
       seasons: leagueData.seasons,
-      teams: [], // Teams will be added externally
+      // teams: [], // Teams will be added externally
     };
 
     // Save league data to the database
@@ -54,11 +54,6 @@ const fetchAndSaveLeague = async (leagueId) => {
     throw new CustomError("Failed to fetch and save league data", 500);
   }
 };
-
-
-
-
-
 
 /**
  * Insert or Update a League in the Database.
@@ -70,7 +65,7 @@ const insertOrUpdateLeague = async (leagueData) => {
     // Save or update league in the database
     const savedLeague = await League.findOneAndUpdate(
       { leagueId: leagueData?.league?.id }, // Filter by League ID
-      { 
+      {
         $set: {
           leagueId: leagueData?.league?.id,
           name: leagueData?.league?.name,
@@ -78,8 +73,8 @@ const insertOrUpdateLeague = async (leagueData) => {
           logo: leagueData?.league?.logo,
           country: leagueData?.country,
           seasons: leagueData?.seasons,
-        //   teams: leagueData?.teams || [],
-        }
+          //   teams: leagueData?.teams || [],
+        },
       },
       { upsert: true, new: true, setDefaultsOnInsert: true } // Options
     );
@@ -88,14 +83,53 @@ const insertOrUpdateLeague = async (leagueData) => {
   } catch (error) {
     // throw new CustomError(`No league found with ID: ${leagueId}`, 404);
 
-    throw new CustomError(`Error in insertOrUpdateLeague: ${error.message}`,404);
+    throw new CustomError(
+      `Error in insertOrUpdateLeague: ${error.message}`,
+      404
+    );
   }
 };
 
-module.exports = {fetchAndSaveLeague, insertOrUpdateLeague };
+/**
+ * Loop through all leagues in the soccerLeagues object and fetch & save data for each.
+ */
+const fetchAndSaveAllLeagues = async () => {
+  try {
+    for (const leagueName in soccerLeagues) {
+      if (soccerLeagues.hasOwnProperty(leagueName)) {
+        const leagueId = soccerLeagues[leagueName];
 
+        console.log(
+          `Fetching and saving data for "${leagueName}" (League ID: ${leagueId})`
+        );
 
+        try {
+          // Call the fetchAndSaveLeague function for each league
+          await fetchAndSaveLeague(leagueId);
+          console.log(
+            `Data for "${leagueName}" (League ID: ${leagueId}) saved successfully`
+          );
+        } catch (error) {
+          // Custom error handling if fetching and saving league data fails
+          console.error(
+            `Failed to fetch and save data for "${leagueName}" (League ID: ${leagueId}): ${error.message}`
+          );
+          throw new CustomError(
+            `Failed to fetch and save data for ${leagueName}`,
+            500
+          );
+        }
+      }
+    }
+  } catch (error) {
+    // General error handling for the entire process
+    console.error("Error in fetching and saving league data:", error.message);
+    throw new CustomError("Failed to process all league data", 500);
+  }
+};
 
-
-
-
+module.exports = {
+  fetchAndSaveLeague,
+  insertOrUpdateLeague,
+  fetchAndSaveAllLeagues,
+};

@@ -126,4 +126,58 @@ const fetchAndSaveTeams = async (leagueId, season) => {
   }
 };
 
-module.exports = { fetchAndSaveTeams };
+/**
+ * Search for teams by name, allowing partial matches.
+ * @param {string} query - The search query for the team's name.
+ * @returns {Promise<Array>} - A list of teams matching the query.
+ * @throws {CustomError} - Throws error if no teams are found or if the query is invalid.
+ */
+const searchTeam = async (query) => {
+  if (!query || query.trim().length === 0) {
+    throw new CustomError("Search query cannot be empty", 400);
+  }
+
+  try {
+    // Search teams whose name contains the query, case-insensitive
+    const teams = await SoccerTeam.find({
+      name: { $regex: query, $options: "i" }, // 'i' makes it case-insensitive
+    });
+
+    if (teams.length === 0) {
+      return null;
+    }
+
+    return teams;
+  } catch (error) {
+    console.error("Error in searchTeam:", error.message);
+    throw new CustomError("Error occurred while searching for teams", 500);
+  }
+};
+
+/**
+ * Service to get team by teamId.
+ * @param {number} teamId - The ID of the team to fetch.
+ * @returns {Promise<Object>} - The team document.
+ * @throws {CustomError} - Throws an error if team is not found.
+ */
+const getTeamByTeamId = async (teamId) => {
+  if (!teamId) {
+    throw new CustomError("Team ID is required", 400);
+  }
+
+  try {
+    const team = await SoccerTeam.findOne({ teamId });
+
+    if (!team) {
+      console.log("condition fullfilled")
+      throw new CustomError(`No team found with ID: ${teamId}`, 404);
+    }
+
+    return team;
+  } catch (error) {
+    console.error("Error in getTeamByTeamId:", error.message);
+    throw new CustomError(error.message, 500);
+  }
+};
+
+module.exports = { fetchAndSaveTeams, searchTeam, getTeamByTeamId };
