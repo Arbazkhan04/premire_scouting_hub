@@ -122,10 +122,18 @@ const fetchAndSaveTeams = async (leagueId, season) => {
       );
     }
 
-    for (const teamData of teams) {
-      const teamSeasons = await fetchTeamSeasons(teamData.team.id);
-      await saveTeamInfo(teamData, teamSeasons, leagueId);
-    }
+    // for (const teamData of teams) {
+    //   const teamSeasons = await fetchTeamSeasons(teamData.team.id);
+    //   await saveTeamInfo(teamData, teamSeasons, leagueId);
+    // }
+
+    await Promise.all(
+      teams.map(async (teamData) => {
+        const teamSeasons = await fetchTeamSeasons(teamData.team.id);
+        return saveTeamInfo(teamData, teamSeasons, leagueId);
+      })
+    );
+    
   } catch (error) {
     console.error("Error fetching team data:", error.message);
     throw new CustomError("Failed to fetch and save team data", 500);

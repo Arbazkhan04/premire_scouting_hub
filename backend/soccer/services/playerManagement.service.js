@@ -107,7 +107,8 @@ const fetchPlayerSeasons = async (playerId) => {
 
     // Check if response data is available
     if (!data || !data.response || data.response.length === 0) {
-      throw new CustomError("No seasons found for this player", 404);
+      // throw new CustomError("No seasons found for this player", 404);
+      return []
     }
 
     return data.response; // Returning an array of seasons
@@ -131,7 +132,8 @@ const fetchandSaveAllPlayerData = async (playerId) => {
 
     //fetch player Seasons
     const playerSeasons = await fetchPlayerSeasons(playerId);
-
+    // const 
+console.log(playerSeasons)
     playerProfile.seasons = playerSeasons;
 
     //save user profile in db
