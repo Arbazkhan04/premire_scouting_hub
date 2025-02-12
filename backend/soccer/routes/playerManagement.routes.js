@@ -9,6 +9,6 @@ router.post("/addPlayer", insertOrUpdatePlayerController);
 
 router.post("/fetchandSavePlayerStats",fetchAndSavePlayerStatisticsController)
 
-router.get("/getUserProfile",getPlayerProfile)
+router.get("/getPlayerProfile",getPlayerProfile)
 
 module.exports = router;

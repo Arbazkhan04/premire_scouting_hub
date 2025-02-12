@@ -90,6 +90,12 @@ const saveTeamInfo = async (teamData, seasons, leagueId) => {
   }
 };
 
+
+/**
+ * fetch all the teams of a league of particular season
+ * @param {*} leagueId 
+ * @param {*} season 
+ */
 const fetchAndSaveTeams = async (leagueId, season) => {
   if (!leagueId || !season) {
     throw new CustomError("League ID and Season are required", 400);
@@ -179,5 +185,8 @@ const getTeamByTeamId = async (teamId) => {
     throw new CustomError(error.message, 500);
   }
 };
+
+
+
 
 module.exports = { fetchAndSaveTeams, searchTeam, getTeamByTeamId };

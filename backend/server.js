@@ -3,6 +3,7 @@ require('dotenv').config({ path: `.env.${process.env.NODE_ENV}` });
 const express = require('express');
 const passport = require('passport');
 const errorHandler = require("./middlewares/errorHandler");
+const compression = require("compression");
 
 const session = require('express-session'); 
 const passportConfiguration = require('./utils/passportConfiguration');
@@ -25,7 +26,7 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
-
+app.use(compression())
 
 // User Management Routes
 const userManagementRoutes= require("./routes/authRoutes")

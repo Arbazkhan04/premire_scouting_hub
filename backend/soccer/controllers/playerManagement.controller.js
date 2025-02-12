@@ -19,7 +19,7 @@ const getPlayerProfile = async (req, res, next) => {
   
       const profile = await getPlayerProfilewithStats(playerId);
       
-      responseHandler(res, 200, "Player inserted or updated successfully", profile);
+      responseHandler(res, 200, "Player profile fetched successfully", profile);
     } catch (error) {
       console.error("Error in insertOrUpdatePlayerController:", error.message);
       next(error instanceof CustomError ? error : new CustomError(error.message, 500));

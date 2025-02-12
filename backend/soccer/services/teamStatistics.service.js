@@ -1,9 +1,8 @@
 const axios = require("axios");
 const CustomError = require("../../utils/customError"); // Ensure you have your custom error class
-const SoccerTeamStatistics=require("../models/teamStatistics.model")
+const SoccerTeamStatistics = require("../models/teamStatistics.model");
 const Team = require("../models/team.model");
 const League = require("../models/league.model");
-
 
 const fetchTeamStatistics = async (leagueId, season, teamId) => {
   try {
@@ -51,11 +50,11 @@ const saveTeamStatistics = async (data) => {
   try {
     // Extract relevant team statistics response
     const teamStats = data.data.response;
-// console.log(data.response)
+    // console.log(data.response)
     // Check if there is no data available
-    if ((!teamStats) || teamStats.fixtures?.played?.total === 0) {
+    if (!teamStats || teamStats.fixtures?.played?.total === 0) {
       // console.log(teamStats.fixtures?.played?.total)
-      console.log("logic wrong")
+      console.log("logic wrong");
       return { success: true, message: "No data available to save." };
     }
 
@@ -118,11 +117,11 @@ const saveTeamStatistics = async (data) => {
   }
 };
 
-
-
-
-
-
+/**
+ * Fetch the team statistics for all the leagues in which this team is playing for all the league seasons
+ * @param {*} teamId
+ * @returns
+ */
 
 
 const processTeamStatistics = async (teamId) => {
@@ -133,37 +132,135 @@ const processTeamStatistics = async (teamId) => {
       throw new CustomError(`Team with ID ${teamId} not found`, 404);
     }
 
-    // Loop through the leagues array in the team document
-    for (const leagueEntry of team.leagues) {
-      const leagueId = leagueEntry;
-
-      // Find the league document by leagueId
-      const league = await League.findOne({ leagueId });
-      if (!league) {
-        console.warn(`League with ID ${leagueId} not found. Skipping...`);
-        continue; // Skip if the league is not found
-      }
-
-      // Loop through the seasons array inside the league document
-      for (const season of league.seasons) {
+    // Process all leagues in parallel
+    await Promise.all(
+      team.leagues.map(async (leagueId) => {
         try {
-          // Fetch team statistics for the current league and season
-          const statisticsData = await fetchTeamStatistics(leagueId, season.year, teamId);
+          // Find the league document by leagueId
+          const league = await League.findOne({ leagueId });
+          if (!league) {
+            console.warn(`League with ID ${leagueId} not found. Skipping...`);
+            return; // Skip if the league is not found
+          }
 
-          // Save the statistics using the previously created method
-          await saveTeamStatistics(statisticsData);
+          // Process all seasons in parallel
+          await Promise.all(
+            league.seasons.map(async (season) => {
+              try {
+                // Fetch and save team statistics concurrently
+                const statisticsData = await fetchTeamStatistics(
+                  leagueId,
+                  season.year,
+                  teamId
+                );
+                await saveTeamStatistics(statisticsData);
+              } catch (error) {
+                console.error(
+                  `Error processing stats for team ${teamId}, league ${leagueId}, season ${season.year}:`,
+                  error
+                );
+              }
+            })
+          );
         } catch (error) {
-          console.error(`Error processing stats for team ${teamId}, league ${leagueId}, season ${season.year}:`, error);
+          console.error(`Error processing league ${leagueId}:`, error);
         }
-      }
-    }
+      })
+    );
 
     return { success: true, message: "Team statistics processed successfully" };
   } catch (error) {
-    throw new CustomError(error.message || "Failed to process team statistics", error.status || 500);
+    throw new CustomError(
+      error.message || "Failed to process team statistics",
+      error.status || 500
+    );
   }
 };
 
 
 
-module.exports = { fetchTeamStatistics, saveTeamStatistics, processTeamStatistics };
+
+
+// const processTeamStatistics = async (teamId) => {
+//   try {
+//     // Find the team document by teamId
+//     const team = await Team.findOne({ teamId });
+//     if (!team) {
+//       throw new CustomError(`Team with ID ${teamId} not found`, 404);
+//     }
+
+//     // Loop through the leagues array in the team document
+//     for (const leagueEntry of team.leagues) {
+//       const leagueId = leagueEntry;
+
+//       // Find the league document by leagueId
+//       const league = await League.findOne({ leagueId });
+//       if (!league) {
+//         console.warn(`League with ID ${leagueId} not found. Skipping...`);
+//         continue; // Skip if the league is not found
+//       }
+
+//       // Loop through the seasons array inside the league document
+//       for (const season of league.seasons) {
+//         try {
+//           // Fetch team statistics for the current league and season
+//           const statisticsData = await fetchTeamStatistics(
+//             leagueId,
+//             season.year,
+//             teamId
+//           );
+
+//           // Save the statistics using the previously created method
+//           await saveTeamStatistics(statisticsData);
+//         } catch (error) {
+//           console.error(
+//             `Error processing stats for team ${teamId}, league ${leagueId}, season ${season.year}:`,
+//             error
+//           );
+//         }
+//       }
+// //     }
+
+//     return { success: true, message: "Team statistics processed successfully" };
+//   } catch (error) {
+//     throw new CustomError(
+//       error.message || "Failed to process team statistics",
+//       error.status || 500
+//     );
+//   }
+// };
+
+
+
+
+
+//create a method which will get all the team Ids of the league and then
+//process team statistics by team Id(it will fetch and save statitics of team by team id for every season)
+//then save team statistics
+
+const fetchandSaveAllTeamsStatistics = async (leagueId) => {
+  try {
+    const league = await League.findOne({ leagueId }).select("teams.teamId");
+
+    if (!league) {
+      throw new CustomError("No league Found", 404);
+    }
+
+    // Process all teams in parallel
+    await Promise.all(
+      league.teams.map((team) => processTeamStatistics(team.teamId))
+    );
+
+    return { success: true, message: "Team statistics processed successfully" };
+  } catch (error) {
+    throw new CustomError(error.message, 500);
+  }
+};
+
+
+module.exports = {
+  fetchandSaveAllTeamsStatistics,
+  fetchTeamStatistics,
+  saveTeamStatistics,
+  processTeamStatistics,
+};
