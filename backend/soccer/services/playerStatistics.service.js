@@ -17,7 +17,9 @@ const fetchAndSaveAllPlayerStatistics = async (playerId) => {
       const playerProfile = await SoccerProfile.findOne({ playerId });
   
       if (!playerProfile || !playerProfile.seasons || playerProfile.seasons.length === 0) {
-        throw new CustomError('No seasons found for this player', 404);
+      return { message: 'No season found for this player' };
+
+        // throw new CustomError('No seasons found for this player', 404);
       }
   
       // Sort the seasons array in descending order (top years to lower)

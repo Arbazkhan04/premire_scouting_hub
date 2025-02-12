@@ -3,31 +3,70 @@ const CustomError = require("../../utils/customError"); // Ensure you have your 
 const SoccerTeamStatistics = require("../models/teamStatistics.model");
 const Team = require("../models/team.model");
 const League = require("../models/league.model");
+const { apiRequest } = require("../../utils/apiRequest");
+// const fetchTeamStatistics = async (leagueId, season, teamId) => {
+//   try {
+//     const options = {
+//       method: "GET",
+//       url: "https://api-football-v1.p.rapidapi.com/v3/teams/statistics",
+//       params: {
+//         league: leagueId.toString(),
+//         season: season.toString(),
+//         team: teamId.toString(),
+//       },
+//       headers: {
+//         "x-rapidapi-key": process.env.SOCCER_API_KEY, // Use environment variables for security
+//         "x-rapidapi-host": "api-football-v1.p.rapidapi.com",
+//       },
+//     };
+
+//     const response = await axios.request(options);
+
+//     // Validate response structure
+//     if (!response.data || response.data.results === 0) {
+//       throw new CustomError(404, "No team statistics found.");
+//     }
+
+//     return { success: true, data: response.data };
+//   } catch (error) {
+//     console.error("Error fetching team statistics:", error.message);
+
+//     // Handle Axios errors or custom API errors
+//     if (error.response) {
+//       throw new CustomError(
+//         error.response.status,
+//         error.response.data.message || "API request failed."
+//       );
+//     } else {
+//       throw new CustomError(
+//         500,
+//         "Internal Server Error while fetching team statistics."
+//       );
+//     }
+//   }
+// };
 
 const fetchTeamStatistics = async (leagueId, season, teamId) => {
   try {
-    const options = {
-      method: "GET",
-      url: "https://api-football-v1.p.rapidapi.com/v3/teams/statistics",
-      params: {
-        league: leagueId.toString(),
-        season: season.toString(),
-        team: teamId.toString(),
-      },
-      headers: {
-        "x-rapidapi-key": process.env.SOCCER_API_KEY, // Use environment variables for security
-        "x-rapidapi-host": "api-football-v1.p.rapidapi.com",
-      },
+    // Prepare parameters for the API request
+    const params = {
+      league: leagueId.toString(),
+      season: season.toString(),
+      team: teamId.toString(),
     };
 
-    const response = await axios.request(options);
+    // Call the apiRequest method instead of axios directly
+    const responseData = await apiRequest(
+      "https://api-football-v1.p.rapidapi.com/v3/teams/statistics",
+      params
+    );
 
     // Validate response structure
-    if (!response.data || response.data.results === 0) {
+    if (!responseData || responseData.results === 0) {
       throw new CustomError(404, "No team statistics found.");
     }
 
-    return { success: true, data: response.data };
+    return { success: true, data: responseData };
   } catch (error) {
     console.error("Error fetching team statistics:", error.message);
 
@@ -38,10 +77,7 @@ const fetchTeamStatistics = async (leagueId, season, teamId) => {
         error.response.data.message || "API request failed."
       );
     } else {
-      throw new CustomError(
-        500,
-        "Internal Server Error while fetching team statistics."
-      );
+      throw new CustomError(500, error.message);
     }
   }
 };
@@ -54,7 +90,7 @@ const saveTeamStatistics = async (data) => {
     // Check if there is no data available
     if (!teamStats || teamStats.fixtures?.played?.total === 0) {
       // console.log(teamStats.fixtures?.played?.total)
-      console.log("logic wrong");
+      console.log("No Stats for this season");
       return { success: true, message: "No data available to save." };
     }
 
@@ -123,7 +159,6 @@ const saveTeamStatistics = async (data) => {
  * @returns
  */
 
-
 const processTeamStatistics = async (teamId) => {
   try {
     // Find the team document by teamId
@@ -177,10 +212,6 @@ const processTeamStatistics = async (teamId) => {
   }
 };
 
-
-
-
-
 // const processTeamStatistics = async (teamId) => {
 //   try {
 //     // Find the team document by teamId
@@ -230,10 +261,6 @@ const processTeamStatistics = async (teamId) => {
 //   }
 // };
 
-
-
-
-
 //create a method which will get all the team Ids of the league and then
 //process team statistics by team Id(it will fetch and save statitics of team by team id for every season)
 //then save team statistics
@@ -245,18 +272,23 @@ const fetchandSaveAllTeamsStatistics = async (leagueId) => {
     if (!league) {
       throw new CustomError("No league Found", 404);
     }
+    console.log(league.teams);
 
-    // Process all teams in parallel
-    await Promise.all(
-      league.teams.map((team) => processTeamStatistics(team.teamId))
-    );
+    for(team of league.teams) {
+      const teamId = team.teamId;
+      await processTeamStatistics(teamId);
+    }
+
+    // // Process all teams in parallel
+    // await Promise.all(
+    //   league.teams.map((team) => processTeamStatistics(team.teamId))
+    // );
 
     return { success: true, message: "Team statistics processed successfully" };
   } catch (error) {
     throw new CustomError(error.message, 500);
   }
 };
-
 
 module.exports = {
   fetchandSaveAllTeamsStatistics,
