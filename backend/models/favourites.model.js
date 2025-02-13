@@ -24,7 +24,7 @@ const FavoritesSchema = new mongoose.Schema(
       {
         teamRef: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "Team", // Reference to Team Model
+          ref: "SoccerTeam", // Reference to Team Model
           required: true,
         },
         teamId: {
