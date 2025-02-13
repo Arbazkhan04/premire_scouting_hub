@@ -69,7 +69,7 @@ const {
    */
   const removeTeam = async (req, res, next) => {
     const userId = req.user.userId;
-    const { teamId } = req.body;
+    const { teamId } = req.query;
   
     if (!teamId) {
       return responseHandler(res, 400, "TeamId is required", null);
