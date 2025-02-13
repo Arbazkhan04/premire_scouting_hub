@@ -130,8 +130,182 @@ const savePlayerStatistics = async (playerId, season, statistics) => {
   }
 };
 
+
+
+
+
+const getPlayerAggregatedStats = async (playerId) => {
+  try {
+    // Fetch all statistics for the player
+    const playerStatsDocs = await PlayerStatistic.find({ playerId });
+
+    if (!playerStatsDocs.length) {
+      throw new CustomError(`No statistics found for player ID: ${playerId}`, 404);
+    }
+
+    // Initialize an empty object to store aggregated stats
+    const aggregatedStats = {};
+
+    // Iterate through all documents
+    for (const doc of playerStatsDocs) {
+      const season = doc.season;
+
+      // If season is not already in the aggregatedStats, initialize it
+      if (!aggregatedStats[season]) {
+        aggregatedStats[season] = {
+          playerId,  // Include player ID in each season's stats
+          season,
+          totalGoals: 0,
+          totalFouls: 0,
+          cards: { yellow: 0, yellowred: 0, red: 0 },
+          penalty: { won: 0, scored: 0, missed: 0, saved: 0 },
+          lineups:0,
+          totalMinutesPlayed:0,
+          // rating:0,
+          shots:0,
+          passes:0,
+          tackles:0,
+          duels:0,
+          dribbles:0,
+          leaguesandTeams:[],
+          
+
+        };
+      }
+
+      // Iterate through all statistics for this season
+      for (const stat of doc.statistics) {
+        aggregatedStats[season].totalGoals += stat.goals?.total || 0;
+        aggregatedStats[season].totalFouls += stat.fouls?.committed || 0;
+
+        // Aggregate cards
+        aggregatedStats[season].cards.yellow += stat.cards?.yellow || 0;
+        aggregatedStats[season].cards.yellowred += stat.cards?.yellowred || 0;
+        aggregatedStats[season].cards.red += stat.cards?.red || 0;
+
+        // Aggregate penalties
+        aggregatedStats[season].penalty.won += stat.penalty?.won || 0;
+        aggregatedStats[season].penalty.scored += stat.penalty?.scored || 0;
+        aggregatedStats[season].penalty.missed += stat.penalty?.missed || 0;
+        aggregatedStats[season].penalty.saved += stat.penalty?.saved || 0;
+
+
+        //leagues and teams in which player play
+        aggregatedStats[season].leaguesandTeams.push({league:stat.league?.name,team:stat.team?.name})
+
+        aggregatedStats[season].lineups += stat.games?.lineups;
+        aggregatedStats[season].totalMinutesPlayed += stat.games?.minutes;
+        // aggregatedStats[season].rating += stat.games?.rating;
+        aggregatedStats[season].shots += stat.shots?.total;
+        aggregatedStats[season].passes += stat.passes?.total;
+        aggregatedStats[season].tackles += stat.tackles?.total;
+        aggregatedStats[season].duels += stat.duels?.total;
+        aggregatedStats[season].dribbles += stat.dribbles?.success;
+
+
+
+
+        console.log(aggregatedStats[2024])
+      }
+    }
+
+    // Convert aggregatedStats object into an array for frontend usage
+    return Object.values(aggregatedStats);
+  } catch (error) {
+    console.error("Error fetching player statistics:", error);
+    throw new CustomError(error.message || "Failed to fetch player statistics", error.statusCode || 500);
+  }
+};
+
+
+// const getPlayerAggregatedStats = async (playerId) => {
+//   try {
+//     const playerStatsDocs = await PlayerStatistic.find({ playerId });
+
+//     // Custom error if no documents are found for the player
+//     if (!playerStatsDocs.length) {
+//       throw new CustomError(`No statistics found for player ID: ${playerId}`, 404);
+//     }
+
+//     // Initialize an object to hold the aggregated stats per season
+//     const seasonStats = {};
+
+//     // Loop through each player's stats document
+//     playerStatsDocs.forEach((doc) => {
+//       // Loop through each entry in the statistics array
+//       doc.statistics.forEach((stat) => {
+//         const season = stat.league?.season; // Get the season for this entry
+//         if (!season) return; // Skip if no season is provided
+
+//         if (!seasonStats[season]) {
+//           seasonStats[season] = {
+//             playerId,
+//             season,
+//             totalLineups: 0,
+//             totalGoals: 0,
+//             totalAssists: 0,
+//             totalMinutesPlayed: 0,
+//             totalShots: 0,
+//             totalPasses: 0,
+//             totalYellowCards: 0,
+//             totalRedCards: 0,
+//             totalFoulsDrawn: 0,
+//             totalFoulsCommitted: 0,
+//             totalTackles: 0,
+//             totalDuels: 0,
+//             totalDuelsWon: 0,
+//             totalDribblesAttempted: 0,
+//             totalDribblesSuccess: 0,
+//             totalPenaltiesScored: 0,
+//             totalPenaltiesMissed: 0,
+//           };
+//         }
+
+//         const games = stat.games;
+//         if (!games) {
+//           throw new CustomError(`Games data is missing for player ID: ${playerId} in season: ${season}`, 400);
+//         }
+
+//         // Aggregate data for this season
+//         seasonStats[season].totalLineups += games.lineups || 0;
+//         seasonStats[season].totalGoals += games.goals?.total || 0;
+//         seasonStats[season].totalAssists += games.goals?.assists || 0;
+//         seasonStats[season].totalMinutesPlayed += games.minutes || 0;
+//         seasonStats[season].totalShots += games.shots?.total || 0;
+//         seasonStats[season].totalPasses += games.passes?.total || 0;
+//         seasonStats[season].totalYellowCards += games.cards?.yellow || 0;
+//         seasonStats[season].totalRedCards += games.cards?.red || 0;
+//         seasonStats[season].totalFoulsDrawn += games.fouls?.drawn || 0;
+//         seasonStats[season].totalFoulsCommitted += games.fouls?.committed || 0;
+//         seasonStats[season].totalTackles += games.tackles?.total || 0;
+//         seasonStats[season].totalDuels += games.duels?.total || 0;
+//         seasonStats[season].totalDuelsWon += games.duels?.won || 0;
+//         seasonStats[season].totalDribblesAttempted += games.dribbles?.attempts || 0;
+//         seasonStats[season].totalDribblesSuccess += games.dribbles?.success || 0;
+//         seasonStats[season].totalPenaltiesScored += games.penalty?.scored || 0;
+//         seasonStats[season].totalPenaltiesMissed += games.penalty?.missed || 0;
+//       });
+//     });
+
+//     // Convert the stats object into an array and return
+//     return Object.values(seasonStats);
+//   } catch (error) {
+//     console.error(error);
+//     // Handle errors with your custom error handler
+//     if (error instanceof CustomError) {
+//       throw error; // Re-throw custom error
+//     }
+//     throw new CustomError(`Error retrieving season statistics: ${error.message}`, 500);
+//   }
+// };
+
+
+
+
+
 module.exports = {
   fetchPlayerStatisticsByPlayerId,
   savePlayerStatistics,
   fetchAndSaveAllPlayerStatistics,
+  getPlayerAggregatedStats
 };

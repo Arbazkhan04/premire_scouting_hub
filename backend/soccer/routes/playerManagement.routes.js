@@ -1,6 +1,6 @@
 const express = require('express');
 const { searchPlayerController,insertOrUpdatePlayerController,getPlayerProfile } = require('../controllers/playerManagement.controller');
-const {fetchAndSavePlayerStatisticsController}=require('../controllers/playerStatistics.controller')
+const {fetchAndSavePlayerStatisticsController, getPlayerAggregatedStatsController}=require('../controllers/playerStatistics.controller');
 const router = express.Router();
 
 router.get('/searchPlayer', searchPlayerController);
@@ -10,5 +10,7 @@ router.post("/addPlayer", insertOrUpdatePlayerController);
 router.post("/fetchandSavePlayerStats",fetchAndSavePlayerStatisticsController)
 
 router.get("/getPlayerProfile",getPlayerProfile)
+
+router.get("/getPlayerAggregatedStats",getPlayerAggregatedStatsController)
 
 module.exports = router;

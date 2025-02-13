@@ -120,7 +120,7 @@ const removeTeamFromFavorites = async (userId, teamId) => {
 const getFavoritesByUserId = async (userId) => {
   try {
     const favorites = await Favorites.findOne({ userId })
-      .populate("players.playerRef", "name position photo")
+      .populate("players.playerRef", "name position photo").populate("teams.teamRef", "name code country logo")
       // .populate("teams.teamRef", "name logo");
 
     if (!favorites) {

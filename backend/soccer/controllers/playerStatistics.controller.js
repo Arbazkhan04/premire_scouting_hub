@@ -2,6 +2,7 @@ const {
   fetchPlayerStatisticsByPlayerId,
   savePlayerStatistics,
   fetchAndSaveAllPlayerStatistics,
+  getPlayerAggregatedStats
 } = require("../services/playerStatistics.service");
 const CustomError = require("../../utils/customError"); // Using your custom error handler
 const responseHandler = require("../../utils/responseHandler"); // Using your custom response handler
@@ -79,7 +80,32 @@ const getPlayerStatistics = async (req, res, next) => {
   }
 };
 
+
+
+/**
+ * Controller to get aggregated statistics for a player.
+ */
+const getPlayerAggregatedStatsController = async (req, res, next) => {
+  try {
+    const { playerId } = req.query;
+
+    if (!playerId) {
+      return responseHandler(res, 400, "Player ID and season are required", null);
+    }
+
+    // Get the aggregated stats for the player
+    const aggregatedStats = await getPlayerAggregatedStats(playerId);
+
+    // Respond with the aggregated stats
+    responseHandler(res, 200, "Player aggregated statistics retrieved successfully", aggregatedStats);
+  } catch (error) {
+    console.error("Error in getPlayerAggregatedStatsController:", error.message);
+    next(error instanceof customError ? error : new customError(error.message, 500));
+  }
+};
+
 module.exports = {
   getPlayerStatistics,
-  fetchAndSavePlayerStatisticsController
+  fetchAndSavePlayerStatisticsController,
+  getPlayerAggregatedStatsController
 };
