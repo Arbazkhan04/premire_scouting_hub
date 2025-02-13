@@ -31,7 +31,7 @@ const {
    */
   const removePlayer = async (req, res, next) => {
     const userId = req.user.userId;
-    const { playerRef, playerId } = req.body;
+    const { playerRef, playerId } = req.query;
   
     if (!playerId) {
       return responseHandler(res, 400, "PlayerId is required", null);
