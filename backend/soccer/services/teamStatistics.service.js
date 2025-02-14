@@ -274,7 +274,7 @@ const fetchandSaveAllTeamsStatistics = async (leagueId) => {
     }
     console.log(league.teams);
 
-    for(team of league.teams) {
+    for (team of league.teams) {
       const teamId = team.teamId;
       await processTeamStatistics(teamId);
     }
@@ -290,9 +290,29 @@ const fetchandSaveAllTeamsStatistics = async (leagueId) => {
   }
 };
 
+/**
+ * Get all the statistics of a team
+ * @param {*} teamId
+ * @returns
+ */
+const getTeamStats = async (teamId) => {
+  try {
+    const stats = await SoccerTeamStatistics.find({ team: teamId }).select(
+      "-_id -__v -createdAt -updatedAt"
+    );
+    if (!stats) {
+      return [];
+    }
+    return stats;
+  } catch (error) {
+    throw new CustomError(error.message || "Internal Server Error", 500);
+  }
+};
+
 module.exports = {
   fetchandSaveAllTeamsStatistics,
   fetchTeamStatistics,
   saveTeamStatistics,
   processTeamStatistics,
+  getTeamStats
 };

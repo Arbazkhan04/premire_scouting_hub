@@ -3,6 +3,7 @@ const SoccerTeam = require("../models/team.model");
 const SoccerLeague = require("../models/league.model");
 const axios = require("axios");
 const CustomError = require("../../utils/customError");
+const { getTeamStats } = require("../services/teamStatistics.service");
 
 const RAPID_API_KEY = process.env.SOCCER_API_KEY;
 const RAPID_API_HOST = "https://api-football-v1.p.rapidapi.com";
@@ -90,11 +91,10 @@ const saveTeamInfo = async (teamData, seasons, leagueId) => {
   }
 };
 
-
 /**
  * fetch all the teams of a league of particular season
- * @param {*} leagueId 
- * @param {*} season 
+ * @param {*} leagueId
+ * @param {*} season
  */
 const fetchAndSaveTeams = async (leagueId, season) => {
   if (!leagueId || !season) {
@@ -133,7 +133,6 @@ const fetchAndSaveTeams = async (leagueId, season) => {
         return saveTeamInfo(teamData, teamSeasons, leagueId);
       })
     );
-    
   } catch (error) {
     console.error("Error fetching team data:", error.message);
     throw new CustomError("Failed to fetch and save team data", 500);
@@ -183,18 +182,23 @@ const getTeamByTeamId = async (teamId) => {
     const team = await SoccerTeam.findOne({ teamId });
 
     if (!team) {
-      console.log("condition fullfilled")
+      console.log("condition fullfilled");
       throw new CustomError(`No team found with ID: ${teamId}`, 404);
     }
 
-    return team;
+    const getTeamStatistics = await getTeamStats(teamId);
+// console.log(getTeamStatistics)
+    team.Statistics = getTeamStatistics;
+    const response={
+      team,
+      TeamStatistics:getTeamStatistics
+    }
+
+    return response;
   } catch (error) {
     console.error("Error in getTeamByTeamId:", error.message);
     throw new CustomError(error.message, 500);
   }
 };
-
-
-
 
 module.exports = { fetchAndSaveTeams, searchTeam, getTeamByTeamId };
