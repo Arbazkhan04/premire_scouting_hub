@@ -12,76 +12,76 @@ const {
    */
   const addPlayer = async (req, res, next) => {
     const userId = req.user.userId; // Extracted from auth middleware
-    const { playerRef, playerId } = req.body;
+    const { playerRef, playerId,sportName } = req.body;
   
-    if (!playerRef || !playerId) {
-      return responseHandler(res, 400, "PlayerRef and PlayerId are required", null);
+    if (!playerRef || !playerId || !sportName) {
+      return responseHandler(res, 400, "PlayerRef,PlayerId and sportName are required", null);
     }
   
     try {
-      const result = await addPlayerToFavorites(userId, playerRef, playerId);
+      const result = await addPlayerToFavorites(userId, playerRef, playerId,sportName);
       return responseHandler(res, 200, result.message, result?.favorites);
     } catch (error) {
       next(error);
     }
   };
   
-  /**
-   * Controller to remove a player from the user's favorites.
-   */
-  const removePlayer = async (req, res, next) => {
-    const userId = req.user.userId;
-    const { playerRef, playerId } = req.query;
-  
-    if (!playerId) {
-      return responseHandler(res, 400, "PlayerId is required", null);
-    }
-  
-    try {
-      const result = await removePlayerFromFavorites(userId, playerId);
-      return responseHandler(res, 200, result.message, null);
-    } catch (error) {
-      next(error);
-    }
-  };
-  
-  /**
-   * Controller to add a team to the user's favorites.
-   */
-  const addTeam = async (req, res, next) => {
-    const userId = req.user.userId;
-    const { teamRef, teamId } = req.body;
-  
-    if (!teamRef || !teamId) {
-      return responseHandler(res, 400, "TeamRef and TeamId are required", null);
-    }
-  
-    try {
-      const result = await addTeamToFavorites(userId, teamRef, teamId);
-      return responseHandler(res, 200, result.message, null);
-    } catch (error) {
-      next(error);
-    }
-  };
-  
-  /**
-   * Controller to remove a team from the user's favorites.
-   */
-  const removeTeam = async (req, res, next) => {
-    const userId = req.user.userId;
-    const { teamId } = req.query;
-  
-    if (!teamId) {
-      return responseHandler(res, 400, "TeamId is required", null);
-    }
-  
-    try {
-      const result = await removeTeamFromFavorites(userId, teamId);
-      return responseHandler(res, 200, result.message, null);
-    } catch (error) {
-      next(error);
-    }
-  };
+/**
+ * Controller to remove a player from the user's favorites for a specific sport.
+ */
+const removePlayer = async (req, res, next) => {
+  const userId = req.user.userId;
+  const { playerId, sportName } = req.query;
+
+  if (!playerId || !sportName) {
+    return responseHandler(res, 400, "PlayerId and sportName are required", null);
+  }
+
+  try {
+    const result = await removePlayerFromFavorites(userId, playerId, sportName);
+    return responseHandler(res, 200, result.message, null);
+  } catch (error) {
+    next(error);
+  }
+};
+
+ /**
+ * Controller to add a team to the user's favorites for a specific sport.
+ */
+const addTeam = async (req, res, next) => {
+  const userId = req.user.userId;
+  const { teamRef, teamId, sportName } = req.body;
+
+  if (!teamRef || !teamId || !sportName) {
+    return responseHandler(res, 400, "TeamRef, TeamId, and SportName are required", null);
+  }
+
+  try {
+    const result = await addTeamToFavorites(userId, teamRef, teamId, sportName);
+    return responseHandler(res, 200, result.message, null);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Controller to remove a team from the user's favorites for a specific sport.
+ */
+const removeTeam = async (req, res, next) => {
+  const userId = req.user.userId;
+  const { teamId, sportName } = req.query;
+
+  if (!teamId || !sportName) {
+    return responseHandler(res, 400, "TeamId and SportName are required", null);
+  }
+
+  try {
+    const result = await removeTeamFromFavorites(userId, teamId, sportName);
+    return responseHandler(res, 200, result.message, null);
+  } catch (error) {
+    next(error);
+  }
+};
 
 
   /**
