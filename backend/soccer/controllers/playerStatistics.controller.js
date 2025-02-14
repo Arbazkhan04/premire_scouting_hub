@@ -100,7 +100,7 @@ const getPlayerAggregatedStatsController = async (req, res, next) => {
     responseHandler(res, 200, "Player aggregated statistics retrieved successfully", aggregatedStats);
   } catch (error) {
     console.error("Error in getPlayerAggregatedStatsController:", error.message);
-    next(error instanceof customError ? error : new customError(error.message, 500));
+    next(error instanceof CustomError ? error : new CustomError(error.message, 500));
   }
 };
 

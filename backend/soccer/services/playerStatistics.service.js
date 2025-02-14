@@ -149,6 +149,7 @@ const getPlayerAggregatedStats = async (playerId) => {
     // Iterate through all documents
     for (const doc of playerStatsDocs) {
       const season = doc.season;
+      
 
       // If season is not already in the aggregatedStats, initialize it
       if (!aggregatedStats[season]) {
