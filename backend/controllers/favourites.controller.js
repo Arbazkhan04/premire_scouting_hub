@@ -3,7 +3,8 @@ const {
     removePlayerFromFavorites,
     addTeamToFavorites,
     removeTeamFromFavorites,
-    getFavoritesByUserId
+    getFavoritesByUserId,
+    favouriteHighlights
   } = require("../services/favourites.service");
   const responseHandler = require("../utils/responseHandler");
   
@@ -97,12 +98,37 @@ const getFavorites = async (req, res, next) => {
     next(error);
   }
 };
+
+
+
+/**
+ * Controller to get a user's favorite highlights for a given sport.
+ */
+const getFavoriteHighlights = async (req, res, next) => {
+  const userId = req.user.userId; // Extracted from auth middleware
+  const { sportName } = req.query; // Get sportName from request params
+  if (!sportName) {
+    return responseHandler(res, 400, "SportName are required", null);
+  }
+  try {
+    // Call the service method to get the favourite highlights
+    const highlights = await favouriteHighlights(userId, sportName);
+    return responseHandler(res, 200, "User favorite highlights retrieved successfully", highlights);
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+
   
   module.exports = {
     addPlayer,
     removePlayer,
     addTeam,
     removeTeam,
-    getFavorites
+    getFavorites,
+    getFavoriteHighlights
   };
   
