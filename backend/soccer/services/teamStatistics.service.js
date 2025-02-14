@@ -309,10 +309,33 @@ const getTeamStats = async (teamId) => {
   }
 };
 
+
+/**
+ * Get all the statistics of a team for a particular season
+ * @param {*} teamId
+ * @param {*} season
+ * @returns
+ */
+const getTeamStatsOfSeason = async (teamId, season) => {
+  try {
+    const stats = await SoccerTeamStatistics.find({ team: teamId, season: season }).select(
+      "team league season fixtures.played.total fixtures.wins.total fixtures.draw.total fixtures.loses.total form"
+    );
+    if (!stats || stats.length === 0) {
+      return [];
+    }
+    return stats;
+  } catch (error) {
+    throw new CustomError(error.message || "Internal Server Error", 500);
+  }
+};
+
+
 module.exports = {
   fetchandSaveAllTeamsStatistics,
   fetchTeamStatistics,
   saveTeamStatistics,
   processTeamStatistics,
-  getTeamStats
+  getTeamStats,
+  getTeamStatsOfSeason
 };

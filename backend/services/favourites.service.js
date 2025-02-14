@@ -1,7 +1,11 @@
 const Favorites = require("../models/favourites.model");
+const {
+  getPlayerStatsSummary,
+} = require("../soccer/services/playerStatistics.service");
+const {
+  getTeamStatsOfSeason,
+} = require("../soccer/services/teamStatistics.service");
 const CustomError = require("../utils/customError");
-
-
 
 /**
  * Add a player to the user's favorites list for a specific sport.
@@ -26,7 +30,9 @@ const addPlayerToFavorites = async (userId, playerRef, playerId, sportName) => {
         ],
       });
     } else {
-      let sportEntry = favorites.favourites.find((fav) => fav.sportName === sportName);
+      let sportEntry = favorites.favourites.find(
+        (fav) => fav.sportName === sportName
+      );
 
       if (!sportEntry) {
         favorites.favourites.push({
@@ -35,7 +41,9 @@ const addPlayerToFavorites = async (userId, playerRef, playerId, sportName) => {
           teams: [],
         });
       } else {
-        const isAlreadyFavorite = sportEntry.players.some((p) => p.playerId === playerId);
+        const isAlreadyFavorite = sportEntry.players.some(
+          (p) => p.playerId === playerId
+        );
         if (isAlreadyFavorite) {
           throw new CustomError("Player is already in favorites", 400);
         }
@@ -46,10 +54,12 @@ const addPlayerToFavorites = async (userId, playerRef, playerId, sportName) => {
     await favorites.save();
     return { message: "Player added to favorites successfully", favorites };
   } catch (error) {
-    throw new CustomError(error.message || "Error adding player to favorites", error.statusCode || 500);
+    throw new CustomError(
+      error.message || "Error adding player to favorites",
+      error.statusCode || 500
+    );
   }
 };
-
 
 // /**
 //  * Add a player to the user's favorites list.
@@ -92,13 +102,17 @@ const removePlayerFromFavorites = async (userId, playerId, sportName) => {
       throw new CustomError("No favorites found", 404);
     }
 
-    const sportFavorites = favorites.favourites.find(fav => fav.sportName === sportName);
+    const sportFavorites = favorites.favourites.find(
+      (fav) => fav.sportName === sportName
+    );
 
     if (!sportFavorites || sportFavorites.players.length === 0) {
       throw new CustomError(`No favorite players found for ${sportName}`, 404);
     }
 
-    const updatedPlayers = sportFavorites.players.filter((p) => p.playerId !== playerId);
+    const updatedPlayers = sportFavorites.players.filter(
+      (p) => p.playerId !== playerId
+    );
 
     if (updatedPlayers.length === sportFavorites.players.length) {
       throw new CustomError("Player not found in favorites", 404);
@@ -109,7 +123,10 @@ const removePlayerFromFavorites = async (userId, playerId, sportName) => {
 
     return { message: "Player removed from favorites successfully" };
   } catch (error) {
-    throw new CustomError(error.message || "Error removing player from favorites", error.statusCode || 500);
+    throw new CustomError(
+      error.message || "Error removing player from favorites",
+      error.statusCode || 500
+    );
   }
 };
 
@@ -130,12 +147,16 @@ const addTeamToFavorites = async (userId, teamRef, teamId, sportName) => {
         favourites: [{ sportName, teams: [{ teamRef, teamId }] }],
       });
     } else {
-      let sportFavorites = favorites.favourites.find(fav => fav.sportName === sportName);
+      let sportFavorites = favorites.favourites.find(
+        (fav) => fav.sportName === sportName
+      );
 
       if (!sportFavorites) {
         favorites.favourites.push({ sportName, teams: [{ teamRef, teamId }] });
       } else {
-        const isAlreadyFavorite = sportFavorites.teams.some((t) => t.teamId === teamId);
+        const isAlreadyFavorite = sportFavorites.teams.some(
+          (t) => t.teamId === teamId
+        );
         if (isAlreadyFavorite) {
           throw new CustomError("Team is already in favorites", 400);
         }
@@ -146,7 +167,10 @@ const addTeamToFavorites = async (userId, teamRef, teamId, sportName) => {
     await favorites.save();
     return { message: "Team added to favorites successfully" };
   } catch (error) {
-    throw new CustomError(error.message || "Error adding team to favorites", error.statusCode || 500);
+    throw new CustomError(
+      error.message || "Error adding team to favorites",
+      error.statusCode || 500
+    );
   }
 };
 
@@ -164,13 +188,17 @@ const removeTeamFromFavorites = async (userId, teamId, sportName) => {
       throw new CustomError("No favorites found", 404);
     }
 
-    const sportFavorites = favorites.favourites.find(fav => fav.sportName === sportName);
+    const sportFavorites = favorites.favourites.find(
+      (fav) => fav.sportName === sportName
+    );
 
     if (!sportFavorites || sportFavorites.teams.length === 0) {
       throw new CustomError(`No favorite teams found for ${sportName}`, 404);
     }
 
-    const updatedTeams = sportFavorites.teams.filter((t) => t.teamId !== teamId);
+    const updatedTeams = sportFavorites.teams.filter(
+      (t) => t.teamId !== teamId
+    );
 
     if (updatedTeams.length === sportFavorites.teams.length) {
       throw new CustomError("Team not found in favorites", 404);
@@ -181,7 +209,10 @@ const removeTeamFromFavorites = async (userId, teamId, sportName) => {
 
     return { message: "Team removed from favorites successfully" };
   } catch (error) {
-    throw new CustomError(error.message || "Error removing team from favorites", error.statusCode || 500);
+    throw new CustomError(
+      error.message || "Error removing team from favorites",
+      error.statusCode || 500
+    );
   }
 };
 
@@ -192,8 +223,8 @@ const removeTeamFromFavorites = async (userId, teamId, sportName) => {
 const getFavoritesByUserId = async (userId) => {
   try {
     const favorites = await Favorites.findOne({ userId })
-      .populate("favourites.players.playerRef", "name position photo")
-      .populate("favourites.teams.teamRef", "name code country logo");
+      .populate("favourites.players.playerRef", "name position photo seasons")
+      .populate("favourites.teams.teamRef", "name code country logo seasons");
 
     if (!favorites) {
       throw new CustomError("No favorites found for this user", 404);
@@ -201,17 +232,108 @@ const getFavoritesByUserId = async (userId) => {
 
     return favorites;
   } catch (error) {
-    throw new CustomError(error.message || "Error fetching favorites", error.statusCode || 500);
+    throw new CustomError(
+      error.message || "Error fetching favorites",
+      error.statusCode || 500
+    );
   }
 };
 
+/**
+ * Get the favourite highlights stats.
+ * @param {string} userId - The ID of the user.
+ */
+const favouriteHighlights = async (userId, sportName) => {
+  try {
+    //Step 1: get favourites by userId
+    const userFavourites = await getFavoritesByUserId(userId);
 
+    // Step 2: Find the sportName favorites
+    const sportFavorites = userFavourites.favourites.find(
+      (fav) => fav.sportName === sportName
+    );
+    if (!sportFavorites) {
+      throw new CustomError(
+        `No favorites found for the sport: ${sportName}`,
+        404
+      );
+    }
+    //for soccersport data use this if condition
+    if (sportName == "soccer") {
+      // Step 3: Prepare results for players and teams
+      const playerHighlights = [];
+      const teamHighlights = [];
 
+      // Step 4: Fetch player stats for the sport
+      for (let player of sportFavorites.players) {
+        const playerId = player.playerId; // Assuming playerRef contains the player data
+        // Get the latest season stats for this player
+        const latestSeason = player.playerRef.seasons.sort((a, b) => b - a)[0];
+
+        const playerSummary = await getPlayerStatsSummary(
+          playerId,
+          latestSeason
+        );
+
+        playerHighlights.push({
+          playerId: playerId,
+          playerName: player.playerRef.name,
+          photo: player.playerRef.photo,
+          season: latestSeason,
+          position: player.playerRef.position,
+          statsSummary: playerSummary,
+        });
+      }
+
+      // Step 5: Fetch team stats for the sport
+      for (let team of sportFavorites.teams) {
+        const teamId = team.teamId;
+
+        // Get the latest season stats for this team
+        const latestSeason = team.teamRef.seasons.sort((a, b) => b - a)[0];
+
+        const teamStats = await getTeamStatsOfSeason(teamId, latestSeason); // Assuming latestSeason has a name field for the season
+        const organizedStats = [];
+        for (stats of teamStats) {
+          const setStats = {
+            matchesPlayed: stats.fixtures?.played?.total || 0,
+            wins: stats?.fixtures?.wins?.total || 0,
+            loses: stats?.fixtures?.loses?.total || 0,
+            form: stats?.form,
+            leagueId:stats?.league
+            
+          };
+          organizedStats.push(setStats)
+        }
+        teamHighlights.push({
+          team: team.teamRef.name,
+          teamId: teamStats[0]?.team,
+          code: team.teamRef.code,
+          season: latestSeason,
+          logo: team.teamRef.logo,
+          statsSummary: organizedStats,
+        });
+      }
+
+      // Return combined highlights
+      return {
+        players: playerHighlights,
+        teams: teamHighlights,
+      };
+    }
+  } catch (error) {
+    throw new CustomError(
+      error.message || "Error fetching favorites",
+      error.statusCode || 500
+    );
+  }
+};
 
 module.exports = {
   addPlayerToFavorites,
   removePlayerFromFavorites,
   addTeamToFavorites,
   removeTeamFromFavorites,
-  getFavoritesByUserId
+  getFavoritesByUserId,
+  favouriteHighlights,
 };

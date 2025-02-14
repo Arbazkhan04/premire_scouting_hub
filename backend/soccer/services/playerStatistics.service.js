@@ -300,12 +300,46 @@ const getPlayerAggregatedStats = async (playerId) => {
 // };
 
 
+const getPlayerStatsSummary = async (playerId, season) => {
+  try {
+    // Fetch player statistics for the given season
+    const playerStats = await PlayerStatistic.findOne({ playerId, season });
 
+    if (!playerStats) {
+      throw new CustomError(`No statistics found for player ID: ${playerId} in season ${season}`, 404);
+    }
+
+    // Initialize summary object
+    const statsSummary = {
+      season,
+      totalGoals: 0,
+      totalFouls: 0,
+      totalPasses: 0,
+      totalMatchesPlayed: 0,
+      totalMinutesPlayed: 0,
+    };
+
+    // Aggregate stats from all records for the season
+    for (const stat of playerStats.statistics) {
+      statsSummary.totalGoals += stat.goals?.total || 0;
+      statsSummary.totalFouls += stat.fouls?.committed || 0;
+      statsSummary.totalPasses += stat.passes?.total || 0;
+      statsSummary.totalMatchesPlayed += stat.games?.lineups || 0;
+      statsSummary.totalMinutesPlayed += stat.games?.minutes || 0;
+    }
+
+    return statsSummary;
+  } catch (error) {
+    console.error("Error fetching player stats summary:", error);
+    throw new CustomError(error.message || "Failed to fetch player stats summary", error.statusCode || 500);
+  }
+};
 
 
 module.exports = {
   fetchPlayerStatisticsByPlayerId,
   savePlayerStatistics,
   fetchAndSaveAllPlayerStatistics,
-  getPlayerAggregatedStats
+  getPlayerAggregatedStats,
+  getPlayerStatsSummary
 };
