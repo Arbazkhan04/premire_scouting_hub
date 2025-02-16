@@ -3,7 +3,6 @@ const SoccerTeam = require("../models/team.model");
 const SoccerLeague = require("../models/league.model");
 const axios = require("axios");
 const CustomError = require("../../utils/customError");
-const { getTeamStats } = require("../services/teamStatistics.service");
 
 const RAPID_API_KEY = process.env.SOCCER_API_KEY;
 const RAPID_API_HOST = "https://api-football-v1.p.rapidapi.com";
@@ -32,6 +31,15 @@ const saveTeamInfo = async (teamData, seasons, leagueId) => {
     const team = teamData.team;
     const venue = teamData.venue;
 
+    const modifiedSeasons = seasons.map((season) => ({
+      year: season,
+      stats: false, // Default value
+      statRef: [], // Default value
+    }));
+
+ 
+
+
     const teamInfo = {
       teamId: team.id,
       name: team.name,
@@ -51,7 +59,7 @@ const saveTeamInfo = async (teamData, seasons, leagueId) => {
             image: venue.image,
           }
         : {},
-      seasons: seasons,
+      seasons: modifiedSeasons,
     };
 
     // Fetch existing team first
@@ -185,6 +193,7 @@ const getTeamByTeamId = async (teamId) => {
       console.log("condition fullfilled");
       throw new CustomError(`No team found with ID: ${teamId}`, 404);
     }
+    const { getTeamStats } = require("../services/teamStatistics.service");
 
     const getTeamStatistics = await getTeamStats(teamId);
 // console.log(getTeamStatistics)
@@ -201,4 +210,134 @@ const getTeamByTeamId = async (teamId) => {
   }
 };
 
-module.exports = { fetchAndSaveTeams, searchTeam, getTeamByTeamId };
+
+
+
+// const updateSeason = async (teamId, seasonYear, statRef) => {
+//   try {
+//     // Validate input arguments
+//     if (!teamId || !seasonYear || !statRef) {
+//       throw new CustomError("Invalid input: teamId, seasonYear, and statRef are required", 400);
+//     }
+
+//     // Convert statRef to ObjectId if it's a string
+//     const statRefObjectId = new mongoose.Types.ObjectId(statRef);
+
+//     // Find the team by teamId
+//     const team = await SoccerTeam.findOne({ teamId });
+
+//     if (!team) {
+//       throw new CustomError(`Team with teamId ${teamId} not found`, 404);
+//     }
+
+//     // Find the season index
+//     const existingSeasonIndex = team.seasons.findIndex(season => season.year === seasonYear);
+
+//     if (existingSeasonIndex !== -1) {
+//       // If the season exists, update it
+//       const existingSeason = team.seasons[existingSeasonIndex];
+
+//       // **Ensure `statRef` is an array**
+//       if (!Array.isArray(existingSeason.statRef)) {
+//         existingSeason.statRef = [];
+//       }
+
+//       // Check for duplicates before adding the new statRef
+//       if (!existingSeason.statRef.some(ref => ref.equals(statRefObjectId))) {
+//         existingSeason.statRef.push(statRefObjectId);
+//       }
+
+//       existingSeason.stats = true; // Mark stats as true
+//     } else {
+//       // If season does not exist, add a new entry
+//       team.seasons.push({
+//         year: seasonYear,
+//         stats: true,
+//         statRef: [statRefObjectId], // Store the new stat reference in an array
+//       });
+//     }
+
+//     // Save the updated team document with retry mechanism
+//     const updatedTeam = await SoccerTeam.findOneAndUpdate(
+//       { teamId },
+//       { $set: { seasons: team.seasons } }, // Update seasons array
+//       { new: true, runValidators: true }
+//     );
+
+//     if (!updatedTeam) {
+//       throw new CustomError(`Failed to update team with teamId ${teamId}`, 500);
+//     }
+
+//     return updatedTeam;
+//   } catch (error) {
+//     console.error("Error updating season:", error.message);
+    
+//     // If error is not a CustomError, wrap it in one
+//     if (!(error instanceof CustomError)) {
+//       throw new CustomError(`Failed to update season: ${error.message}`, 500);
+//     }
+
+//     throw error;
+//   }
+// };
+
+
+
+
+const updateSeason = async (teamId, seasonYear, statRef) => {
+  try {
+    // Validate input arguments
+    if (!teamId || !seasonYear || !statRef) {
+      throw new CustomError("Invalid input: teamId, seasonYear, and statRef are required", 400);
+    }
+
+    // Convert statRef to ObjectId if it's a string
+    const statRefObjectId = new mongoose.Types.ObjectId(statRef);
+
+    // Use `findOneAndUpdate` with `$set` and `$addToSet` to prevent overwrites
+    const updatedTeam = await SoccerTeam.findOneAndUpdate(
+      { teamId, "seasons.year": seasonYear },
+      {
+        $set: { "seasons.$.stats": true }, // Ensure `stats` is set to `true`
+        $addToSet: { "seasons.$.statRef": statRefObjectId } // Prevents duplicate statRefs
+      },
+      { new: true, runValidators: true }
+    );
+
+    // If no matching season is found, add a new season entry
+    if (!updatedTeam) {
+      const newSeason = {
+        year: seasonYear,
+        stats: true,
+        statRef: [statRefObjectId]
+      };
+
+      // Push the new season using `$push`
+      const finalUpdatedTeam = await SoccerTeam.findOneAndUpdate(
+        { teamId },
+        { $push: { seasons: newSeason } },
+        { new: true, runValidators: true }
+      );
+
+      if (!finalUpdatedTeam) {
+        throw new CustomError(`Failed to update team with teamId ${teamId}`, 500);
+      }
+
+      return finalUpdatedTeam;
+    }
+
+    return updatedTeam;
+  } catch (error) {
+    console.error("Error updating season:", error.message);
+
+    // If error is not a CustomError, wrap it in one
+    if (!(error instanceof CustomError)) {
+      throw new CustomError(`Failed to update season: ${error.message}`, 500);
+    }
+
+    throw error;
+  }
+};
+
+
+module.exports = { fetchAndSaveTeams, searchTeam, getTeamByTeamId ,updateSeason};

@@ -4,6 +4,7 @@ const SoccerTeamStatistics = require("../models/teamStatistics.model");
 const Team = require("../models/team.model");
 const League = require("../models/league.model");
 const { apiRequest } = require("../../utils/apiRequest");
+const { updateSeason } = require("./teams.service");
 // const fetchTeamStatistics = async (leagueId, season, teamId) => {
 //   try {
 //     const options = {
@@ -142,6 +143,13 @@ const saveTeamStatistics = async (data) => {
       },
       statisticsData,
       { upsert: true, new: true }
+    );
+
+    //update seasons field of team document
+    await updateSeason(
+      teamStats.team.id,
+      teamStats.league.season,
+      savedStatistics?._id
     );
 
     return { success: true, data: savedStatistics };
@@ -309,7 +317,6 @@ const getTeamStats = async (teamId) => {
   }
 };
 
-
 /**
  * Get all the statistics of a team for a particular season
  * @param {*} teamId
@@ -318,7 +325,10 @@ const getTeamStats = async (teamId) => {
  */
 const getTeamStatsOfSeason = async (teamId, season) => {
   try {
-    const stats = await SoccerTeamStatistics.find({ team: teamId, season: season }).select(
+    const stats = await SoccerTeamStatistics.find({
+      team: teamId,
+      season: season,
+    }).select(
       "team league season fixtures.played.total fixtures.wins.total fixtures.draw.total fixtures.loses.total form"
     );
     if (!stats || stats.length === 0) {
@@ -330,12 +340,11 @@ const getTeamStatsOfSeason = async (teamId, season) => {
   }
 };
 
-
 module.exports = {
   fetchandSaveAllTeamsStatistics,
   fetchTeamStatistics,
   saveTeamStatistics,
   processTeamStatistics,
   getTeamStats,
-  getTeamStatsOfSeason
+  getTeamStatsOfSeason,
 };
