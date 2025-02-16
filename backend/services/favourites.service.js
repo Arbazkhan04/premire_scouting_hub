@@ -220,6 +220,25 @@ const removeTeamFromFavorites = async (userId, teamId, sportName) => {
  * Get the favorites document of a user by userId.
  * @param {string} userId - The ID of the user.
  */
+// const getFavoritesByUserId = async (userId) => {
+//   try {
+//     const favorites = await Favorites.findOne({ userId })
+//       .populate("favourites.players.playerRef", "name position photo seasons")
+//       .populate("favourites.teams.teamRef", "name code country logo seasons");
+
+//     if (!favorites) {
+//       throw new CustomError("No favorites found for this user", 404);
+//     }
+
+//     return favorites;
+//   } catch (error) {
+//     throw new CustomError(
+//       error.message || "Error fetching favorites",
+//       error.statusCode || 500
+//     );
+//   }
+// };
+
 const getFavoritesByUserId = async (userId) => {
   try {
     const favorites = await Favorites.findOne({ userId })
@@ -230,6 +249,24 @@ const getFavoritesByUserId = async (userId) => {
       throw new CustomError("No favorites found for this user", 404);
     }
 
+    console.log("Favorites:", JSON.stringify(favorites, null, 2));
+
+    // Check if favourites and teams exist before filtering
+    if (favorites.favourites && Array.isArray(favorites.favourites)) {
+      favorites.favourites.forEach((fav) => {
+        if (fav.teams && Array.isArray(fav.teams)) {
+          fav.teams.forEach((team) => {
+            if (team.teamRef && Array.isArray(team.teamRef.seasons)) {
+              // Filter seasons where stats === true
+              team.teamRef.seasons = team.teamRef.seasons.filter(
+                (season) => season.stats === true
+              );
+            }
+          });
+        }
+      });
+    }
+
     return favorites;
   } catch (error) {
     throw new CustomError(
@@ -238,6 +275,31 @@ const getFavoritesByUserId = async (userId) => {
     );
   }
 };
+
+// const getFavoritesByUserId = async (userId) => {
+//   try {
+//     const favorites = await Favorites.findOne({ userId })
+//       .populate("favourites.players.playerRef", "name position photo seasons")
+//       .populate("favourites.teams.teamRef", "name code country logo seasons");
+
+//     if (!favorites) {
+//       throw new CustomError("No favorites found for this user", 404);
+//     }
+//     console.log("Favorites:", JSON.stringify(favorites, null, 2));
+
+//     // Filter only seasons where stats === true
+//     favorites.favourites.teams.forEach(team => {
+//       // console.log(team.)
+//       if (team.teamRef) {
+//         team.teamRef.seasons = team.teamRef.seasons.filter(season => season.stats === true);
+//       }
+//     });
+
+//     return favorites;
+//   } catch (error) {
+//     throw new CustomError(error.message || "Error fetching favorites", error.statusCode || 500);
+//   }
+// };
 
 /**
  * Get the favourite highlights stats.
@@ -267,6 +329,18 @@ const favouriteHighlights = async (userId, sportName) => {
       // Step 4: Fetch player stats for the sport
       for (let player of sportFavorites.players) {
         const playerId = player.playerId; // Assuming playerRef contains the player data
+        const seasons = player?.playerRef?.seasons;
+        if (seasons.length < 1) {
+          playerHighlights.push({
+            playerId: playerId,
+            playerName: player.playerRef.name,
+            photo: player.playerRef.photo,
+            season: null,
+            position: player.playerRef.position,
+            statsSummary: null,
+          });
+          continue;
+        }
         // Get the latest season stats for this player
         const latestSeason = player.playerRef.seasons.sort((a, b) => b - a)[0];
 
@@ -288,11 +362,13 @@ const favouriteHighlights = async (userId, sportName) => {
       // Step 5: Fetch team stats for the sport
       for (let team of sportFavorites.teams) {
         const teamId = team.teamId;
-
+        console.log(team.teamRef.seasons);
         // Get the latest season stats for this team
-        const latestSeason = team.teamRef.seasons.sort((a, b) => b - a)[0];
+        const latestSeason = team.teamRef.seasons.sort(
+          (a, b) => b.year - a.year
+        )[0]?.year;
 
-        const teamStats = await getTeamStatsOfSeason(teamId, latestSeason); // Assuming latestSeason has a name field for the season
+        const teamStats = await getTeamStatsOfSeason(teamId, latestSeason);
         const organizedStats = [];
         for (stats of teamStats) {
           const setStats = {
@@ -300,10 +376,9 @@ const favouriteHighlights = async (userId, sportName) => {
             wins: stats?.fixtures?.wins?.total || 0,
             loses: stats?.fixtures?.loses?.total || 0,
             form: stats?.form,
-            leagueId:stats?.league
-            
+            leagueId: stats?.league,
           };
-          organizedStats.push(setStats)
+          organizedStats.push(setStats);
         }
         teamHighlights.push({
           team: team.teamRef.name,

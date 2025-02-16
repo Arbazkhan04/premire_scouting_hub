@@ -37,12 +37,18 @@ const SoccerTeamSchema = new mongoose.Schema(
       surface: { type: String },
       image: { type: String },
     },
-    seasons: [{ type: Number }], // Array of seasons (years)
+    seasons: [
+      {
+        year: { type: Number, required: true },
+        stats: { type: Boolean, default: false },
+        statRef: [{ type: mongoose.Schema.Types.ObjectId, ref: "SoccerTeamStatistics" }], // Array of ObjectIds
+        _id: false, // Prevents MongoDB from auto-generating _id for each season entry
+      },
+    ], // Array of season objects
     leagues: [{ type: String, unique: true }], // Array of unique league IDs as strings
-  
   },
   {
-    timestamps: true, 
+    timestamps: true,
   }
 );
 
