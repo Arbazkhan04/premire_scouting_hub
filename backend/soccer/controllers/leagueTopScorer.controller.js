@@ -1,6 +1,6 @@
 const { fetchTopScorers, saveTopScorers, getTopScorers } = require("../services/leagueTopScorer.service");
 const responseHandler = require("../../utils/responseHandler"); // Custom response handler
-
+const CustomError=require("../../utils/customError")
 /**
  * Controller to fetch and store top scorers
  */
@@ -17,7 +17,9 @@ const fetchAndSaveTopScorers = async (req, res, next) => {
 
     return responseHandler(res, 200, "Top scorers data fetched and stored successfully", null);
   } catch (error) {
-    next(error);
+    // next(error);
+    next(error instanceof CustomError ? error : new CustomError(error.message, 500));
+
   }
 };
 
@@ -35,7 +37,9 @@ const getStoredTopScorers = async (req, res, next) => {
     const topScorers = await getTopScorers(leagueId, season);
     return responseHandler(res, 200, "Top scorers data retrieved successfully", topScorers);
   } catch (error) {
-    next(error);
+    // next(error);
+    next(error instanceof CustomError ? error : new CustomError(error.message, 500));
+
   }
 };
 

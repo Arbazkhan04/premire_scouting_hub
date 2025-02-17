@@ -90,10 +90,17 @@ const SoccerLeagueStandingsSchema = new mongoose.Schema(
         },
       },
     ],
+    topScorers: {
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: "SoccerLeagueTopScorer",
+    },
   },
   {
     timestamps: true,
   }
 );
 
-module.exports = mongoose.model("SoccerLeagueStandings", SoccerLeagueStandingsSchema);
+module.exports = mongoose.model(
+  "SoccerLeagueStandings",
+  SoccerLeagueStandingsSchema
+);

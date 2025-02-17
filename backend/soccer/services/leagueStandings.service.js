@@ -24,7 +24,7 @@ const getLeagueStandings = async (leagueId, season) => {
     );
 
     if (!responseData || responseData.results === 0) {
-      throw new CustomError(404, "No league standings found.");
+     return ({message:`No league standings found for league ${leagueId} season ${season}`,date:null});
     }
 
     return { success: true, data: responseData };
@@ -50,7 +50,7 @@ const getLeagueStandings = async (leagueId, season) => {
 const saveStandings = async (data) => {
   try {
     const standings = data.data.response;
-    
+
     if (!standings || standings.length === 0) {
       console.log("No standings data available.");
       return { success: true, message: "No data available to save." };
@@ -60,8 +60,8 @@ const saveStandings = async (data) => {
     const standingsData = {
       leagueId: leagueData.id.toString(),
       season: leagueData.season,
-      country:leagueData.country,
-      leagueName:leagueData.name,
+      country: leagueData.country,
+      leagueName: leagueData.name,
       standings: leagueData.standings[0] || [],
     };
 
@@ -89,9 +89,19 @@ const saveStandings = async (data) => {
  */
 const fetchAndSaveLeagueStandings = async (leagueId, season) => {
   try {
-    const standingsData = await getLeagueStandings(leagueId, season);
-    await saveStandings(standingsData);
-    return { success: true, message: "League standings processed successfully" };
+    const response = await getLeagueStandings(leagueId, season);
+    if (
+      !response.data ||
+      !response.data.response ||
+      response.data.response.length === 0
+    ) {
+      return { message: "No standings data found", data: null };
+    }
+    await saveStandings(response);
+    return {
+      success: true,
+      message: "League standings processed successfully",
+    };
   } catch (error) {
     throw new CustomError(
       error.message || "Failed to process league standings",
@@ -101,18 +111,25 @@ const fetchAndSaveLeagueStandings = async (leagueId, season) => {
 };
 
 /**
- * Retrieve all league standings from the database
- * @param {string} leagueId
- * @returns {Array} League standings
+ * Retrieve all league standings with selected fields including top scorers
+ * @returns {Array} Filtered League standings with top scorers
  */
-const getAllLeagueStandingsFromDb = async (leagueId) => {
+const getFilteredLeagueStandings = async () => {
   try {
-    const standings = await SoccerLeagueStandings.find({ league: leagueId }).select(
-      "-_id -__v -createdAt -updatedAt"
-    );
+    const standings = await SoccerLeagueStandings.find()
+      .populate({
+        path: "topScorers",
+        select:
+          "season leagueId players.player.id players.player.name players.player.photo",
+      })
+      .select(
+        "leagueId season leagueName standings.rank standings.points standings.goalsDiff standings.team standings.form"
+      );
+
     if (!standings || standings.length === 0) {
       return [];
     }
+
     return standings;
   } catch (error) {
     throw new CustomError(error.message || "Internal Server Error", 500);
@@ -141,10 +158,43 @@ const getLeagueStandingsOfSeason = async (leagueId, season) => {
   }
 };
 
+/**
+ * Update the topScorers field in SoccerLeagueStandings
+ * @param {Number} leagueId - League ID
+ * @param {Number} season - Season year
+ * @param {mongoose.Types.ObjectId} topScorerId - ObjectId of the top scorer document
+ */
+const updateTopScorersReference = async (leagueId, season, topScorerId) => {
+  try {
+    const updatedLeagueStandings = await SoccerLeagueStandings.findOneAndUpdate(
+      { leagueId, season }, // Find the document
+      { $set: { topScorers: topScorerId } }, // Update topScorers field
+      { new: true } // Return updated document
+    );
+
+    if (!updatedLeagueStandings) {
+      return {
+        message: "Standings for this league Season not exist",
+        data: null,
+      };
+
+      // throw new CustomError("League standings not found for given leagueId and season", 404);
+    }
+
+    return {
+      message: "Top scorers reference updated successfully",
+      data: updatedLeagueStandings,
+    };
+  } catch (error) {
+    throw new CustomError(error.message, 500);
+  }
+};
+
 module.exports = {
   getLeagueStandings,
   saveStandings,
   fetchAndSaveLeagueStandings,
-  getAllLeagueStandingsFromDb,
+  getFilteredLeagueStandings,
   getLeagueStandingsOfSeason,
+  updateTopScorersReference,
 };
