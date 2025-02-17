@@ -1,5 +1,8 @@
 const Favorites = require("../models/favourites.model");
 const {
+  getFilteredLeagueStandings,
+} = require("../soccer/services/leagueStandings.service");
+const {
   getPlayerStatsSummary,
 } = require("../soccer/services/playerStatistics.service");
 const {
@@ -325,6 +328,7 @@ const favouriteHighlights = async (userId, sportName) => {
       // Step 3: Prepare results for players and teams
       const playerHighlights = [];
       const teamHighlights = [];
+      let leagueHighlights;
 
       // Step 4: Fetch player stats for the sport
       for (let player of sportFavorites.players) {
@@ -388,12 +392,18 @@ const favouriteHighlights = async (userId, sportName) => {
           logo: team.teamRef.logo,
           statsSummary: organizedStats,
         });
+
+        //leagueStats (standings and top scorer)
+        const getAllLeagueStandings = await getFilteredLeagueStandings();
+
+        leagueHighlights = getAllLeagueStandings;
       }
 
       // Return combined highlights
       return {
         players: playerHighlights,
         teams: teamHighlights,
+        leagues: leagueHighlights,
       };
     }
   } catch (error) {

@@ -2,6 +2,8 @@ const axios = require("axios");
 const CustomError = require("../../utils/customError"); // Import custom error class
 const League = require("../models/league.model");
 const soccerLeagues = require("../../utils/soccerLeagues");
+const { fetchAndSaveLeagueStandings } = require("./leagueStandings.service");
+const { fetchAndSaveLeagueTopScorers } = require("./leagueTopScorer.service");
 const RAPID_API_KEY = process.env.SOCCER_API_KEY;
 const RAPID_API_HOST = "https://api-football-v1.p.rapidapi.com";
 
@@ -78,6 +80,16 @@ const insertOrUpdateLeague = async (leagueData) => {
       },
       { upsert: true, new: true, setDefaultsOnInsert: true } // Options
     );
+
+    // const latestSeason = leagueData?.seasons.sort((a, b) => b - a)[0];
+    const latestSeasons = leagueData?.seasons.sort((a, b) => b.year - a.year).slice(0, 2);
+
+    // After Saving the league fetch the league Standings and league top scorers too
+
+    for (let season of latestSeasons) {
+      await fetchAndSaveLeagueStandings(leagueData?.league?.id, season.year);
+      await fetchAndSaveLeagueTopScorers(leagueData?.league?.id, season.year);
+    }
 
     return savedLeague;
   } catch (error) {
