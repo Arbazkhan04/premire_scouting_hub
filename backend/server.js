@@ -41,11 +41,26 @@ const soccerPlayerManagement = require("./soccer/routes/playerManagement.routes"
 const soccerLeagueManagment = require("./soccer/routes/leagues.routes");
 const soccerTeamManagement = require("./soccer/routes/teams.routes");
 
+//American Football Routes
+const americanFootballLeagueManagement= require("./american-Football/routes/leagues.routes")
+const americanFootballTeamsManagement= require("./american-Football/routes/teams.routes")
+const americanFootballPlayersManagement= require("./american-Football/routes/player.route")
+
+
+
+
+
 app.use("/api/v1/auth", userManagementRoutes);
 app.use("/api/v1/favourites", favouritesManagementRoutes);
 app.use("/api/v1/soccer/player", soccerPlayerManagement);
 app.use("/api/v1/soccer/league", soccerLeagueManagment);
 app.use("/api/v1/soccer/team", soccerTeamManagement);
+app.use("/api/v1/american-football/league", americanFootballLeagueManagement);
+app.use("/api/v1/american-football/team", americanFootballTeamsManagement);
+app.use("/api/v1/american-football/player", americanFootballPlayersManagement);
+
+
+
 
 app.use("/", (req, res) => {
   res.send(

@@ -63,7 +63,7 @@ const FavoritesSchema = new mongoose.Schema(
       {
         sportName: {
           type: String,
-          enum: ["soccer", "football", "basketball"], // Allowed sports
+          enum: ["soccer", "american-football", "basketball"], // Allowed sports
           required: true,
         },
         players: [
