@@ -33,6 +33,9 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(compression());
 
+
+
+
 // User Management Routes
 const userManagementRoutes = require("./routes/authRoutes");
 const favouritesManagementRoutes = require("./routes/favourites.routes");
@@ -62,14 +65,18 @@ app.use("/api/v1/american-football/player", americanFootballPlayersManagement);
 
 
 
+// Error Handling Middleware
+app.use(errorHandler);
+
+
+
 app.use("/", (req, res) => {
   res.send(
     'Welcome to root page\n<a href="/auth/google">click here to login<a>'
   );
 });
 
-// Error Handling Middleware
-app.use(errorHandler);
+
 
 // server
 const port = process.env.PORT || 3000;

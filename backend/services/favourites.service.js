@@ -41,10 +41,14 @@ const addPlayerToFavorites = async (userId, playerRef, playerId, sportName) => {
     if (!favorites) {
       favorites = new FavoritesModel({
         userId,
-        favourites: [{ sportName, players: [{ playerRef, playerId }], teams: [] }],
+        favourites: [
+          { sportName, players: [{ playerRef, playerId }], teams: [] },
+        ],
       });
     } else {
-      let sportEntry = favorites.favourites.find((fav) => fav.sportName === sportName);
+      let sportEntry = favorites.favourites.find(
+        (fav) => fav.sportName === sportName
+      );
 
       if (!sportEntry) {
         favorites.favourites.push({
@@ -53,7 +57,9 @@ const addPlayerToFavorites = async (userId, playerRef, playerId, sportName) => {
           teams: [],
         });
       } else {
-        const isAlreadyFavorite = sportEntry.players.some((p) => p.playerId === playerId);
+        const isAlreadyFavorite = sportEntry.players.some(
+          (p) => p.playerId === playerId
+        );
         if (isAlreadyFavorite) {
           throw new CustomError("Player is already in favorites", 400);
         }
@@ -64,7 +70,10 @@ const addPlayerToFavorites = async (userId, playerRef, playerId, sportName) => {
     await favorites.save();
     return { message: "Player added to favorites successfully", favorites };
   } catch (error) {
-    throw new CustomError(error.message || "Error adding player to favorites", error.statusCode || 500);
+    throw new CustomError(
+      error.message || "Error adding player to favorites",
+      error.statusCode || 500
+    );
   }
 };
 
@@ -83,12 +92,16 @@ const removePlayerFromFavorites = async (userId, playerId, sportName) => {
       throw new CustomError("No favorites found", 404);
     }
 
-    const sportFavorites = favorites.favourites.find((fav) => fav.sportName === sportName);
+    const sportFavorites = favorites.favourites.find(
+      (fav) => fav.sportName === sportName
+    );
     if (!sportFavorites || sportFavorites.players.length === 0) {
       throw new CustomError(`No favorite players found for ${sportName}`, 404);
     }
 
-    const updatedPlayers = sportFavorites.players.filter((p) => p.playerId !== playerId);
+    const updatedPlayers = sportFavorites.players.filter(
+      (p) => p.playerId !== playerId
+    );
     if (updatedPlayers.length === sportFavorites.players.length) {
       throw new CustomError("Player not found in favorites", 404);
     }
@@ -98,7 +111,10 @@ const removePlayerFromFavorites = async (userId, playerId, sportName) => {
 
     return { message: "Player removed from favorites successfully" };
   } catch (error) {
-    throw new CustomError(error.message || "Error removing player from favorites", error.statusCode || 500);
+    throw new CustomError(
+      error.message || "Error removing player from favorites",
+      error.statusCode || 500
+    );
   }
 };
 
@@ -120,12 +136,16 @@ const addTeamToFavorites = async (userId, teamRef, teamId, sportName) => {
         favourites: [{ sportName, teams: [{ teamRef, teamId }] }],
       });
     } else {
-      let sportFavorites = favorites.favourites.find((fav) => fav.sportName === sportName);
+      let sportFavorites = favorites.favourites.find(
+        (fav) => fav.sportName === sportName
+      );
 
       if (!sportFavorites) {
         favorites.favourites.push({ sportName, teams: [{ teamRef, teamId }] });
       } else {
-        const isAlreadyFavorite = sportFavorites.teams.some((t) => t.teamId === teamId);
+        const isAlreadyFavorite = sportFavorites.teams.some(
+          (t) => t.teamId === teamId
+        );
         if (isAlreadyFavorite) {
           throw new CustomError("Team is already in favorites", 400);
         }
@@ -136,7 +156,10 @@ const addTeamToFavorites = async (userId, teamRef, teamId, sportName) => {
     await favorites.save();
     return { message: "Team added to favorites successfully" };
   } catch (error) {
-    throw new CustomError(error.message || "Error adding team to favorites", error.statusCode || 500);
+    throw new CustomError(
+      error.message || "Error adding team to favorites",
+      error.statusCode || 500
+    );
   }
 };
 
@@ -155,12 +178,16 @@ const removeTeamFromFavorites = async (userId, teamId, sportName) => {
       throw new CustomError("No favorites found", 404);
     }
 
-    const sportFavorites = favorites.favourites.find((fav) => fav.sportName === sportName);
+    const sportFavorites = favorites.favourites.find(
+      (fav) => fav.sportName === sportName
+    );
     if (!sportFavorites || sportFavorites.teams.length === 0) {
       throw new CustomError(`No favorite teams found for ${sportName}`, 404);
     }
 
-    const updatedTeams = sportFavorites.teams.filter((t) => t.teamId !== teamId);
+    const updatedTeams = sportFavorites.teams.filter(
+      (t) => t.teamId !== teamId
+    );
     if (updatedTeams.length === sportFavorites.teams.length) {
       throw new CustomError("Team not found in favorites", 404);
     }
@@ -170,42 +197,8 @@ const removeTeamFromFavorites = async (userId, teamId, sportName) => {
 
     return { message: "Team removed from favorites successfully" };
   } catch (error) {
-    throw new CustomError(error.message || "Error removing team from favorites", error.statusCode || 500);
-  }
-};
-
-const getFavoritesByUserId = async (userId) => {
-  try {
-    const favorites = await Favorites.findOne({ userId })
-      .populate("favourites.players.playerRef", "name position photo seasons")
-      .populate("favourites.teams.teamRef", "name code country logo seasons");
-
-    if (!favorites) {
-      throw new CustomError("No favorites found for this user", 404);
-    }
-
-    console.log("Favorites:", JSON.stringify(favorites, null, 2));
-
-    // Check if favourites and teams exist before filtering
-    if (favorites.favourites && Array.isArray(favorites.favourites)) {
-      favorites.favourites.forEach((fav) => {
-        if (fav.teams && Array.isArray(fav.teams)) {
-          fav.teams.forEach((team) => {
-            if (team.teamRef && Array.isArray(team.teamRef.seasons)) {
-              // Filter seasons where stats === true
-              team.teamRef.seasons = team.teamRef.seasons.filter(
-                (season) => season.stats === true
-              );
-            }
-          });
-        }
-      });
-    }
-
-    return favorites;
-  } catch (error) {
     throw new CustomError(
-      error.message || "Error fetching favorites",
+      error.message || "Error removing team from favorites",
       error.statusCode || 500
     );
   }
@@ -346,11 +339,123 @@ const favouriteHighlights = async (userId, sportName) => {
   }
 };
 
+/**
+ * Get Soccer favorites of a user by userId.
+ * @param {string} userId - The ID of the user.
+ */
+const getSoccerFavourites = async (userId) => {
+  try {
+    const favorites = await Favorites.findOne({ userId })
+      .populate("favourites.players.playerRef", "name position photo seasons")
+      .populate("favourites.teams.teamRef", "name code country logo seasons");
+
+    if (!favorites) {
+      throw new CustomError("No soccer favorites found for this user", 404);
+    }
+
+    console.log("Soccer Favorites:", JSON.stringify(favorites, null, 2));
+
+    // Check if favourites and teams exist before filtering
+    if (favorites.favourites && Array.isArray(favorites.favourites)) {
+      favorites.favourites.forEach((fav) => {
+        if (
+          fav.sportName === "soccer" &&
+          fav.teams &&
+          Array.isArray(fav.teams)
+        ) {
+          fav.teams.forEach((team) => {
+            if (team.teamRef && Array.isArray(team.teamRef.seasons)) {
+              // Filter seasons where stats === true
+              team.teamRef.seasons = team.teamRef.seasons.filter(
+                (season) => season.stats === true
+              );
+            }
+          });
+        }
+      });
+    }
+
+    return favorites;
+  } catch (error) {
+    throw new CustomError(
+      error.message || "Error fetching soccer favorites",
+      error.statusCode || 500
+    );
+  }
+};
+
+/**
+ * Get American Football favorites of a user by userId.
+ * @param {string} userId - The ID of the user.
+ */
+const getAmericanFootballFavourites = async (userId) => {
+  try {
+    const favorites = await AmericanFootballFavorites.findOne({ userId })
+    .populate("favourites.players.playerRef", "group image name number position") // ✅ Populate favorite players
+    .populate({
+      path: "favourites.teams.teamRef",
+      select: "name code country logo players", // ✅ Select only necessary fields
+      populate: {
+        path: "players.roster.playerRefId", // ✅ Deep populate nested roster array
+        model: "AmericanFootballPlayer", // ✅ Ensure correct reference model
+        select: "group image name number position", // ✅ Select only required fields
+      },
+    });
+  
+    if (!favorites) {
+      throw new CustomError(
+        "No American Football favorites found for this user",
+        404
+      );
+    }
+
+    console.log(
+      "American Football Favorites:",
+      JSON.stringify(favorites, null, 2)
+    );
+
+    return favorites;
+  } catch (error) {
+    throw new CustomError(
+      error.message || "Error fetching American Football favorites",
+      error.statusCode || 500
+    );
+  }
+};
+
+/**
+ * Get favorites based on sport name.
+ * @param {string} userId - The ID of the user.
+ * @param {string} sportName - The name of the sport.
+ */
+const getFavourites = async (userId, sportName) => {
+  try {
+    if (!sportName) {
+      throw new CustomError("Sport name is required", 400);
+    }
+
+    if (sportName === "soccer") {
+      return await getSoccerFavourites(userId);
+    } else if (sportName === "american-football") {
+      return await getAmericanFootballFavourites(userId);
+    } else {
+      throw new CustomError("Invalid sport name", 400);
+    }
+  } catch (error) {
+    throw new CustomError(
+      error.message || "Error fetching favorites",
+      error.statusCode || 500
+    );
+  }
+};
+
 module.exports = {
   addPlayerToFavorites,
   removePlayerFromFavorites,
   addTeamToFavorites,
   removeTeamFromFavorites,
-  getFavoritesByUserId,
+  getSoccerFavourites,
+  getAmericanFootballFavourites,
+  getFavourites,
   favouriteHighlights,
 };

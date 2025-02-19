@@ -2,6 +2,7 @@ const axios = require("axios");
 const AmericanFootballPlayer = require("../models/player.model");
 const AmericanFootballTeam = require("../models/teams.model");
 const AmericanFootballLeague=require("../models/league.model")
+const AmericanFootballPlayerStatistics=require("../models/playerStatistics.model")
 const CustomError = require("../../utils/customError");
 const { updateTeamPlayers } = require("./teams.service");
 const {apiRequest} =require("../../utils/apiRequest")
@@ -219,10 +220,20 @@ const getPlayerById = async (playerId) => {
   if (!playerId) throw new CustomError("playerId parameter is required", 400);
 
   try {
-    const player = await AmericanFootballPlayer.findOne({ playerId });
+    // Find the player without statistics field
+    const player = await AmericanFootballPlayer.findOne({ playerId }).select("-statistics");
     if (!player) throw new CustomError(`No player found with ID: ${playerId}`, 404);
 
-    return player;
+    // Get player statistics separately
+    const playerStats = await AmericanFootballPlayerStatistics.find({ playerId });
+
+    // Convert player document to plain JavaScript object (to allow mutation)
+    const playerObject = player.toObject();
+
+    // Add statistics data to the player object
+    playerObject.statistics = playerStats;
+
+    return playerObject;
   } catch (error) {
     console.error("Error getting player by ID:", error.message);
     throw new CustomError("Failed to retrieve player from database", 500);

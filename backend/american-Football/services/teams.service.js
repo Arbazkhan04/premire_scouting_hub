@@ -226,7 +226,13 @@ const getTeamById = async (teamId) => {
   if (!teamId) throw new CustomError("teamId parameter is required", 400);
 
   try {
-    const team = await AmericanFootballTeam.findOne({ teamId });
+    const team = await AmericanFootballTeam.findOne({ teamId })
+      .populate({
+        path: "players.roster.playerRefId", // Populate player reference inside roster
+        model: "AmericanFootballPlayer", // Reference to the correct model
+        select: "name position number image group", // Selecting only required fields
+      });
+
     if (!team) throw new CustomError(`No team found with ID: ${teamId}`, 404);
 
     return team;
@@ -235,7 +241,6 @@ const getTeamById = async (teamId) => {
     throw new CustomError("Failed to retrieve team from database", 500);
   }
 };
-
 
 
 
