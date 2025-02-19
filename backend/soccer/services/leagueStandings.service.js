@@ -17,14 +17,30 @@ const getLeagueStandings = async (leagueId, season) => {
       season: season.toString(),
     };
 
+    // const response = await apiRequest(
+    //   "https://api-american-football.p.rapidapi.com/players/statistics",
+    //   { id: playerId, season: season },
+    //   {
+    //     "x-rapidapi-key": process.env.AMERICAN_FOOTBALL_API_KEY,
+    //     "x-rapidapi-host": "api-american-football.p.rapidapi.com",
+    //   }
+    // );
+
     // Fetch data using the apiRequest utility
     const responseData = await apiRequest(
       "https://api-football-v1.p.rapidapi.com/v3/standings",
-      params
+      params,
+      {
+        "x-rapidapi-key": process.env.SOCCER_API_KEY,
+        "x-rapidapi-host": "api-football-v1.p.rapidapi.com",
+      }
     );
 
     if (!responseData || responseData.results === 0) {
-     return ({message:`No league standings found for league ${leagueId} season ${season}`,date:null});
+      return {
+        message: `No league standings found for league ${leagueId} season ${season}`,
+        date: null,
+      };
     }
 
     return { success: true, data: responseData };
