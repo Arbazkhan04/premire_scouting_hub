@@ -236,7 +236,7 @@ const removeTeamFromFavorites = async (userId, teamId, sportName) => {
 const favouriteHighlights = async (userId, sportName) => {
   try {
     //Step 1: get favourites by userId
-    const userFavourites = await getFavoritesByUserId(userId);
+    const userFavourites = await getSoccerFavourites(userId);
 
     // Step 2: Find the sportName favorites
     const sportFavorites = userFavourites.favourites.find(
