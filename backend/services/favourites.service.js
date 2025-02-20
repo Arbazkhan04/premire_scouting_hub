@@ -318,11 +318,13 @@ const favouriteHighlights = async (userId, sportName) => {
           statsSummary: organizedStats,
         });
 
-        //leagueStats (standings and top scorer)
-        const getAllLeagueStandings = await getFilteredLeagueStandings();
-
-        leagueHighlights = getAllLeagueStandings;
+     
       }
+
+         //leagueStats (standings and top scorer)
+         const getAllLeagueStandings = await getFilteredLeagueStandings();
+
+         leagueHighlights = getAllLeagueStandings;
 
       // Return combined highlights
       return {
