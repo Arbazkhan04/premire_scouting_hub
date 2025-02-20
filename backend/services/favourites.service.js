@@ -290,7 +290,10 @@ const favouriteHighlights = async (userId, sportName) => {
 
       // Step 5: Fetch team stats for the sport
       for (let team of sportFavorites.teams) {
-        const teamId = team.teamId;
+        const teamId = team?.teamId;
+        if(!teamId){
+          throw new CustomError("Team Id is missing",404)
+        }
         console.log(team.teamRef.seasons);
         // Get the latest season stats for this team
         const latestSeason = team.teamRef.seasons.sort(
