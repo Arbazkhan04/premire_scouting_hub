@@ -6,13 +6,13 @@ const errorHandler = require("./middlewares/errorHandler");
 const compression = require("compression");
 const http = require("http");
 const socketService = require("./sockets/socket");
-
+const { initJobSchedulers } = require("./soccer/services/soccerJobs.service");
 const session = require("express-session");
 const passportConfiguration = require("./utils/passportConfiguration");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-
+require("./jobs/worker")
 const app = express();
 const server = http.createServer(app);
 
@@ -33,8 +33,8 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(compression());
 
-
-
+// initialize all recurring jobs when the server starts
+initJobSchedulers();
 
 // User Management Routes
 const userManagementRoutes = require("./routes/authRoutes");
@@ -45,13 +45,9 @@ const soccerLeagueManagment = require("./soccer/routes/leagues.routes");
 const soccerTeamManagement = require("./soccer/routes/teams.routes");
 
 //American Football Routes
-const americanFootballLeagueManagement= require("./american-Football/routes/leagues.routes")
-const americanFootballTeamsManagement= require("./american-Football/routes/teams.routes")
-const americanFootballPlayersManagement= require("./american-Football/routes/player.route")
-
-
-
-
+const americanFootballLeagueManagement = require("./american-Football/routes/leagues.routes");
+const americanFootballTeamsManagement = require("./american-Football/routes/teams.routes");
+const americanFootballPlayersManagement = require("./american-Football/routes/player.route");
 
 app.use("/api/v1/auth", userManagementRoutes);
 app.use("/api/v1/favourites", favouritesManagementRoutes);
@@ -62,21 +58,14 @@ app.use("/api/v1/american-football/league", americanFootballLeagueManagement);
 app.use("/api/v1/american-football/team", americanFootballTeamsManagement);
 app.use("/api/v1/american-football/player", americanFootballPlayersManagement);
 
-
-
-
 // Error Handling Middleware
 app.use(errorHandler);
-
-
 
 app.use("/", (req, res) => {
   res.send(
     'Welcome to root page\n<a href="/auth/google">click here to login<a>'
   );
 });
-
-
 
 // server
 const port = process.env.PORT || 3000;
@@ -85,7 +74,7 @@ const start = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);
     console.log(`Connected to ${process.env.NODE_ENV} Database`);
-    app.listen(process.env.PORT, () => {
+    server.listen(process.env.PORT, () => {
       console.log(`Server is running on port ${process.env.PORT}`);
     });
   } catch (err) {
