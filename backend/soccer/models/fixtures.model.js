@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const SoccerGameSchema = new mongoose.Schema(
   {
-    gameId: { type: Number, required: true, unique: true }, // Fixture ID
+    fixtureId: { type: Number, required: true}, // Fixture ID
     referee: { type: String },
     timezone: { type: String },
     date: { type: Date },

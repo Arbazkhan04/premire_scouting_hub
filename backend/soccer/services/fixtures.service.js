@@ -1,12 +1,9 @@
 const axios = require("axios");
-const CustomError = require("../utils/CustomError");
-const SoccerFixture= require("../models/fixtures.model")
-const soccerLeagues = require("../../utils/soccerLeagues"); 
-
-const RAPIDAPI_KEY = process.env.SOCCER_API_KEY ; // Secure API Key
-
-
-
+const CustomError = require("../../utils/customError");
+const SoccerFixture = require("../models/fixtures.model");
+const soccerLeagues = require("../../utils/soccerLeagues");
+const SocketService = require("../../sockets/socket");
+const RAPIDAPI_KEY = process.env.SOCCER_API_KEY; // Secure API Key
 
 /**
  * Fetch live games from API and return fixture IDs.
@@ -24,7 +21,7 @@ const getLiveGamesFixtureIds = async (leagueIds = "39-15-2-253") => {
         live: leagueIds, // Pass the league IDs
       },
       headers: {
-        "x-rapidapi-key": RAPIDAPI_KEY, 
+        "x-rapidapi-key": RAPIDAPI_KEY,
         "x-rapidapi-host": "api-football-v1.p.rapidapi.com",
       },
     };
@@ -34,12 +31,7 @@ const getLiveGamesFixtureIds = async (leagueIds = "39-15-2-253") => {
 
     // Check if response has valid data
     if (!response.data || response.data.results === 0) {
-    //   throw new CustomError(
-    //     "No live games found for the provided leagues",
-    //     404
-    //   );
-
-      return []
+      return [];
     }
 
     // Extract fixture IDs
@@ -51,8 +43,6 @@ const getLiveGamesFixtureIds = async (leagueIds = "39-15-2-253") => {
     throw new CustomError(error.message || "Failed to fetch live games", 500);
   }
 };
-
-
 
 /**
  * Fetch fixture details for multiple fixture IDs in parallel.
@@ -86,16 +76,12 @@ const getFixtureDetails = async (fixtureIds) => {
     return fixturesData;
   } catch (error) {
     console.error("Error fetching fixture details:", error.message);
-    throw new CustomError(error.message || "Failed to fetch fixture details", 500);
+    throw new CustomError(
+      error.message || "Failed to fetch fixture details",
+      500
+    );
   }
 };
-
-
-
-
-
-
-
 
 /**
  * Insert or update fixtures in the database.
@@ -110,7 +96,9 @@ const insertOrUpdateFixtures = async (fixtureData) => {
     }
 
     // Convert single fixture object into an array for bulk processing
-    const fixturesArray = Array.isArray(fixtureData) ? fixtureData : [fixtureData];
+    const fixturesArray = Array.isArray(fixtureData)
+      ? fixtureData
+      : [fixtureData];
 
     // Use bulk operations for efficiency
     const bulkOperations = fixturesArray.map((fixture) => ({
@@ -138,15 +126,21 @@ const insertOrUpdateFixtures = async (fixtureData) => {
     // Execute bulk write operation
     const result = await SoccerFixture.bulkWrite(bulkOperations);
 
-    console.log("Fixtures inserted/updated:", result);
-    return result;
+    // ✅ Fetch the updated or inserted documents
+    const updatedFixtures = await SoccerFixture.find({
+      fixtureId: { $in: fixturesArray.map((f) => f.fixture.id) }
+    });
+
+    console.log("✅ Fixtures inserted/updated:", updatedFixtures);
+    return updatedFixtures; // ✅ Return actual updated documents
   } catch (error) {
     console.error("Error inserting/updating fixtures:", error.message);
-    throw new CustomError(error.message || "Failed to insert/update fixtures", 500);
+    throw new CustomError(
+      error.message || "Failed to insert/update fixtures",
+      500
+    );
   }
 };
-
-
 
 /**
  * Fetch upcoming 10 fixtures for given league IDs.
@@ -156,7 +150,7 @@ const getUpcomingFixtures = async () => {
   try {
     const leagueIds = Object.values(soccerLeagues); // Extract league IDs
     if (leagueIds.length === 0) {
-      throw new Error("No leagues found in mapping.");
+      throw new CustomError("No leagues found in mapping.", 400);
     }
 
     // Create API requests for each league
@@ -173,20 +167,94 @@ const getUpcomingFixtures = async () => {
     // Fetch all league fixtures in parallel
     const responses = await Promise.all(requests);
 
-    // Extract fixtures from responses
-    const combinedFixtures = responses.flatMap((response) => response.data.response);
+    // Extract fixture IDs from responses
+    const fixtureIds = responses.flatMap((response) =>
+      response.data.response.map((fixture) => fixture.fixture.id)
+    );
 
-    return combinedFixtures;
+    return fixtureIds;
   } catch (error) {
     console.error("Error fetching upcoming fixtures:", error.message);
-    throw new Error("Failed to fetch upcoming fixtures");
+    throw new CustomError(
+      error.message || "Failed to fetch upcoming fixtures",
+      500
+    );
   }
 };
 
+/**
+ * Fetch upcoming fixtures, get their details, and save them to the database.
+ *
+ * This method performs the following steps:
+ * 1. Fetches the upcoming fixtures for all leagues using the `getUpcomingFixtures` method.
+ * 2. Retrieves detailed information for each fixture using the `getFixtureDetails` method.
+ * 3. Inserts or updates the fixture details in the database using the `insertOrUpdateFixtures` method.
+ * 4. Returns the saved fixture details.
+ *
+ * If no fixture IDs are found in the first step, it returns an empty array.
+ *
+ * @returns {Promise<Array>} - Array of saved fixture documents.
+ * @throws {CustomError} - Throws error if any step fails.
+ */
+const upcomingFixtures = async () => {
+  try {
+    // Step 1: Fetch upcoming fixtures
+    const fixtureIds = await getUpcomingFixtures();
 
+    // If no fixture IDs are found, return an empty array
+    if (!fixtureIds || fixtureIds.length === 0) {
+      return [];
+    }
 
+    // Step 2: Get fixture details for all fixture IDs
+    const fixtureDetails = await getFixtureDetails(fixtureIds);
 
+    // Step 3: Insert or update fixtures in the database
+    const savedFixtures = await insertOrUpdateFixtures(fixtureDetails);
 
+    // Step 4: Return the saved fixture details
+    return savedFixtures;
+  } catch (error) {
+    console.error("Error processing upcoming fixtures:", error.message);
+    throw new CustomError(
+      error.message || "Failed to process upcoming fixtures",
+      500
+    );
+  }
+};
 
+/**
+ * Process upcoming fixtures and emit them to all connected clients.
+ * @throws {CustomError} - Throws error if processing or emitting fails.
+ */
+const processUpcomingFixturesandEmit = async () => {
+  try {
+    const upcomingFixturess = await upcomingFixtures();
 
-module.exports = {getLiveGamesFixtureIds,getFixtureDetails,insertOrUpdateFixtures,getUpcomingFixtures}
+    console.log("Upcoming fixtures processed:", upcomingFixturess);
+    // Emit the upcoming fixtures and handle the callback
+    const response={
+      success:true,
+      message:"Upcoming fixtures processed successfully",
+      data:upcomingFixturess
+    }
+    SocketService.emitToAll("upcomingFixtures", response, (ack) => {
+      console.log("Acknowledgment received from clients:", ack);
+    });
+  } catch (error) {
+    console.error("Error processing upcoming fixtures:", error.message);
+    throw new CustomError(
+      error.message || "Failed to process upcoming fixtures",
+      500
+    );
+  }
+};
+
+module.exports = {
+  getLiveGamesFixtureIds,
+  getFixtureDetails,
+  insertOrUpdateFixtures,
+  getUpcomingFixtures,
+  upcomingFixtures,
+  processUpcomingFixturesandEmit
+};
