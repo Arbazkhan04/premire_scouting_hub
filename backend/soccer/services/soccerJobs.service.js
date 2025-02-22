@@ -3,6 +3,7 @@ const { addJob, scheduleRecurringJob } = require("../../jobs/jobQueue");
 const {
   upcomingFixtures,
   getAllUpcomingFixtures,
+  processLiveFixtures,
 } = require("../services/fixtures.service");
 const moment = require("moment");
 
@@ -60,6 +61,13 @@ const scheduleLiveScoreJob = async () => {
 
     if (!earliestFixture) {
       console.log("⚠️ No valid earliest fixture found.");
+      return;
+    }
+
+    const checkLiveFixtures= await processLiveFixtures()
+    if(checkLiveFixtures.length>0){
+      console.log("⚠️ Live fixtures are already running, scheduling live job now...");
+      await scheduleLiveScoreRecurringJob();
       return;
     }
 

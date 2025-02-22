@@ -435,7 +435,7 @@ const processLiveFixturesAndEmit = async () => {
     SocketService.emitToAll("liveFixtures", response, (ack) => {
       console.log("✅ Acknowledgment received from clients:", ack);
     });
-
+console.log("live fixtures", liveFixtures)
     return liveFixtures;
   } catch (error) {
     console.error(
@@ -449,6 +449,190 @@ const processLiveFixturesAndEmit = async () => {
   }
 };
 
+
+
+/**
+ * Fetch completed fixtures (last 10 matches) for all leagues in parallel
+ * and return fixture IDs where status.short === "FT".
+ * @returns {Promise<Array<number>>} - Array of completed fixture IDs.
+ */
+const getCompletedFixtures = async () => {
+  try {
+    const leagueIds = Object.values(soccerLeagues); // Extract league IDs
+
+    console.log(`🔄 Fetching completed fixtures for ${leagueIds.length} leagues...`);
+
+    // Create an array of API requests for each league
+    const requests = leagueIds.map((leagueId) =>
+      axios.get("https://api-football-v1.p.rapidapi.com/v3/fixtures", {
+        params: { league: leagueId, last: 10 }, // Fetch last 10 completed matches
+        headers: {
+          "x-rapidapi-key": RAPIDAPI_KEY,
+          "x-rapidapi-host": "api-football-v1.p.rapidapi.com",
+        },
+      }).then(response => ({
+        leagueId,
+        data: response.data.response || []
+      })).catch(error => {
+        console.error(`⚠️ Error fetching data for League ID: ${leagueId} - ${error.message}`);
+        return { leagueId, data: [] };
+      })
+    );
+
+    // Execute all requests in parallel
+    const results = await Promise.all(requests);
+
+    // Extract and filter completed fixtures
+    let completedFixtureIds = results.flatMap(({ leagueId, data }) => {
+      const finishedFixtures = data.filter(fixture => fixture.fixture?.status?.short === "FT");
+      console.log(`✅ League ID: ${leagueId} - Found ${finishedFixtures.length} completed fixtures`);
+      return finishedFixtures.map(fixture => fixture.fixture.id);
+    });
+
+    console.log(`📊 Total completed fixtures found: ${completedFixtureIds.length}`);
+    return completedFixtureIds;
+  } catch (error) {
+    console.error("❌ Error fetching completed fixtures:", error.message);
+    throw new CustomError(error.message || "Failed to fetch completed fixtures", 500);
+  }
+};
+
+
+
+/**
+ * Process finished fixtures by:
+ * 1. Fetching completed fixture IDs
+ * 2. Fetching fixture details
+ * 3. Inserting/updating them in the database
+ * 4. Returning a structured response by league name
+ *
+ * @returns {Promise<Object>} - Processed finished fixtures grouped by league.
+ */
+const processFinishedFixtures = async () => {
+  try {
+    console.log("🔄 Processing finished fixtures...");
+
+    // Step 1: Get completed fixture IDs
+    const completedFixtureIds = await getCompletedFixtures();
+
+    if (!completedFixtureIds.length) {
+      console.log("⚠️ No completed fixtures found.");
+      return { success: true, message: "No completed fixtures found.", data: {} };
+    }
+
+    // Step 2: Fetch fixture details
+    const fixtureDetails = await getFixtureDetails(completedFixtureIds);
+
+    if (!fixtureDetails.length) {
+      console.log("⚠️ No fixture details available.");
+      return { success: true, message: "No fixture details available.", data: {} };
+    }
+
+    // Step 3: Insert or update fixtures in the database
+    const updatedFixtures = await insertOrUpdateFixtures(fixtureDetails);
+
+    // // Step 4: Organize response by league
+    // const groupedFixtures = {};
+    
+    // updatedFixtures.forEach((fixture) => {
+    //   const leagueId = fixture.league.id;
+    //   const leagueName = fixture.league.name;
+
+    //   if (!groupedFixtures[leagueId]) {
+    //     groupedFixtures[leagueId] = {
+    //       leagueName,
+    //       fixtures: [],
+    //     };
+    //   }
+
+    //   groupedFixtures[leagueId].fixtures.push({
+    //     fixtureId: fixture.fixtureId,
+    //     date: fixture.date,
+    //     homeTeam: fixture.teams.home.name,
+    //     awayTeam: fixture.teams.away.name,
+    //     score: fixture.score.fulltime,
+    //   });
+    // });
+
+    /**
+ * Process finished fixtures by:
+ * 1. Fetching completed fixture IDs
+ * 2. Fetching fixture details
+ * 3. Inserting/updating them in the database
+ * 4. Returning a structured response by league name
+ *
+ * @returns {Promise<Object>} - Processed finished fixtures grouped by league.
+ */
+const processFinishedFixtures = async () => {
+  try {
+    console.log("🔄 Processing finished fixtures...");
+
+    // Step 1: Get completed fixture IDs
+    const completedFixtureIds = await getCompletedFixtures();
+
+    if (!completedFixtureIds.length) {
+      console.log("⚠️ No completed fixtures found.");
+      return { success: true, message: "No completed fixtures found.", data: {} };
+    }
+
+    // Step 2: Fetch fixture details
+    const fixtureDetails = await getFixtureDetails(completedFixtureIds);
+
+    if (!fixtureDetails.length) {
+      console.log("⚠️ No fixture details available.");
+      return { success: true, message: "No fixture details available.", data: {} };
+    }
+
+    // Step 3: Insert or update fixtures in the database
+    const updatedFixtures = await insertOrUpdateFixtures(fixtureDetails);
+
+    // // Step 4: Organize response by league
+    // const groupedFixtures = {};
+    
+    // updatedFixtures.forEach((fixture) => {
+    //   const leagueId = fixture.league.id;
+    //   const leagueName = fixture.league.name;
+
+    //   if (!groupedFixtures[leagueId]) {
+    //     groupedFixtures[leagueId] = {
+    //       leagueName,
+    //       fixtures: [],
+    //     };
+    //   }
+
+    //   groupedFixtures[leagueId].fixtures.push({
+    //     fixtureId: fixture.fixtureId,
+    //     date: fixture.date,
+    //     homeTeam: fixture.teams.home.name,
+    //     awayTeam: fixture.teams.away.name,
+    //     score: fixture.score.fulltime,
+    //   });
+    // });
+
+    console.log("✅ Finished processing completed fixtures.");
+    
+    return { success: true, message: "Finished fixtures processed successfully.", data: updatedFixtures };
+  } catch (error) {
+    console.error("❌ Error processing finished fixtures:", error.message);
+    throw new CustomError(error.message || "Failed to process finished fixtures", 500);
+  }
+};
+console.log("✅ Finished processing completed fixtures.");
+    
+    return { success: true, message: "Finished fixtures processed successfully.", data: updatedFixtures };
+  } catch (error) {
+    console.error("❌ Error processing finished fixtures:", error.message);
+    throw new CustomError(error.message || "Failed to process finished fixtures", 500);
+  }
+};
+
+
+
+
+
+
+
+
 module.exports = {
   getLiveGamesFixtureIds,
   getFixtureDetails,
@@ -459,4 +643,5 @@ module.exports = {
   getAllUpcomingFixtures,
   processLiveFixtures,
   processLiveFixturesAndEmit,
+  processFinishedFixtures
 };
