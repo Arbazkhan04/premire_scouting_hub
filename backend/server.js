@@ -6,7 +6,7 @@ const errorHandler = require("./middlewares/errorHandler");
 const compression = require("compression");
 const http = require("http");
 const socketService = require("./sockets/socket");
-const { initJobSchedulers } = require("./soccer/services/soccerJobs.service");
+const { initJobSchedulers,scheduleLiveScoreJob } = require("./soccer/services/soccerJobs.service");
 const session = require("express-session");
 const passportConfiguration = require("./utils/passportConfiguration");
 const mongoose = require("mongoose");
@@ -35,6 +35,8 @@ app.use(compression());
 
 // initialize all recurring jobs when the server starts
 initJobSchedulers();
+//schedule live score polling job
+scheduleLiveScoreJob()
 
 // User Management Routes
 const userManagementRoutes = require("./routes/authRoutes");
@@ -43,6 +45,8 @@ const favouritesManagementRoutes = require("./routes/favourites.routes");
 const soccerPlayerManagement = require("./soccer/routes/playerManagement.routes");
 const soccerLeagueManagment = require("./soccer/routes/leagues.routes");
 const soccerTeamManagement = require("./soccer/routes/teams.routes");
+const soccerFixturesManagement = require("./soccer/routes/fixtures.routes");
+const soccerOddsManagement = require("./soccer/routes/odds.routes");
 
 //American Football Routes
 const americanFootballLeagueManagement = require("./american-Football/routes/leagues.routes");
@@ -51,9 +55,13 @@ const americanFootballPlayersManagement = require("./american-Football/routes/pl
 
 app.use("/api/v1/auth", userManagementRoutes);
 app.use("/api/v1/favourites", favouritesManagementRoutes);
+
 app.use("/api/v1/soccer/player", soccerPlayerManagement);
 app.use("/api/v1/soccer/league", soccerLeagueManagment);
 app.use("/api/v1/soccer/team", soccerTeamManagement);
+app.use("/api/v1/soccer/fixtures", soccerFixturesManagement);
+app.use("/api/v1/soccer/odds", soccerOddsManagement);
+
 app.use("/api/v1/american-football/league", americanFootballLeagueManagement);
 app.use("/api/v1/american-football/team", americanFootballTeamsManagement);
 app.use("/api/v1/american-football/player", americanFootballPlayersManagement);

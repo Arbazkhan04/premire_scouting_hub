@@ -1,7 +1,8 @@
 const { Worker } = require("bullmq");
 const redis = require("../config/redis");
 const axios = require("axios");
-const {processUpcomingFixturesandEmit} =require("../soccer/services/fixtures.service")
+const {processUpcomingFixturesandEmit, processLiveFixturesAndEmit} =require("../soccer/services/fixtures.service");
+const { scheduleLiveScoreRecurringJob } = require("../soccer/services/soccerJobs.service");
 
 // Create a worker to process jobs
 const worker = new Worker(
@@ -17,16 +18,15 @@ const worker = new Worker(
           // console.log(`✅ Live scores updated:`, scoresResponse.data);
           break;
 
-        case "sendEmails":
-          console.log("📧 Sending email...");
-          const emailResponse = await axios.post("https://api.example.com/send-email", job.data);
-          console.log(`✅ Email sent successfully:`, emailResponse.data);
+        case "startLiveScorePolling":
+          console.log("📧 Start Live Score Polling");
+         await scheduleLiveScoreRecurringJob()
+          // console.log(`✅ Email sent successfully:`, emailResponse.data);
           break;
 
-        case "generateReport":
-          console.log("📄 Generating report...");
-          const reportResponse = await axios.get("https://api.example.com/generate-report");
-          console.log(`✅ Report generated:`, reportResponse.data);
+        case "fetchLiveScores":
+          console.log("📄 Startred Fetchlive score job started");
+          await processLiveFixturesAndEmit()
           break;
 
         default:

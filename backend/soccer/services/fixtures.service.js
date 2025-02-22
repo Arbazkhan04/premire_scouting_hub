@@ -3,6 +3,10 @@ const CustomError = require("../../utils/customError");
 const SoccerFixture = require("../models/fixtures.model");
 const soccerLeagues = require("../../utils/soccerLeagues");
 const SocketService = require("../../sockets/socket");
+const moment = require("moment"); // For UTC time handling
+const { removeRecurringJob } = require("../../jobs/jobManager");
+const { scheduleLiveScoreJob } = require("./soccerJobs.service");
+
 const RAPIDAPI_KEY = process.env.SOCCER_API_KEY; // Secure API Key
 
 /**
@@ -128,10 +132,10 @@ const insertOrUpdateFixtures = async (fixtureData) => {
 
     // ✅ Fetch the updated or inserted documents
     const updatedFixtures = await SoccerFixture.find({
-      fixtureId: { $in: fixturesArray.map((f) => f.fixture.id) }
+      fixtureId: { $in: fixturesArray.map((f) => f.fixture.id) },
     });
 
-    console.log("✅ Fixtures inserted/updated:", updatedFixtures);
+    // console.log("✅ Fixtures inserted/updated:", updatedFixtures);
     return updatedFixtures; // ✅ Return actual updated documents
   } catch (error) {
     console.error("Error inserting/updating fixtures:", error.message);
@@ -229,15 +233,18 @@ const upcomingFixtures = async () => {
  */
 const processUpcomingFixturesandEmit = async () => {
   try {
+    // Fetch and process fresh upcoming fixtures
     const upcomingFixturess = await upcomingFixtures();
 
-    console.log("Upcoming fixtures processed:", upcomingFixturess);
+    //get all upcoming fixtures from db
+    const upcomingFixturesfromDB = await getAllUpcomingFixtures();
+    console.log("Upcoming fixtures processed:", upcomingFixturesfromDB);
     // Emit the upcoming fixtures and handle the callback
-    const response={
-      success:true,
-      message:"Upcoming fixtures processed successfully",
-      data:upcomingFixturess
-    }
+    const response = {
+      success: true,
+      message: "Upcoming fixtures processed successfully",
+      data: upcomingFixturesfromDB,
+    };
     SocketService.emitToAll("upcomingFixtures", response, (ack) => {
       console.log("Acknowledgment received from clients:", ack);
     });
@@ -250,11 +257,206 @@ const processUpcomingFixturesandEmit = async () => {
   }
 };
 
+/**
+ * Get all upcoming fixtures from the database sorted by UTC time.
+ *
+ * This method retrieves fixtures that have `fixture.status.short == "NS"`
+ * (meaning "Not Started" - Upcoming Matches) and sorts them in ascending order.
+ *
+ * Steps:
+ * 1. Fetch upcoming fixtures from the database.
+ * 2. Identify outdated fixtures (fixtures with a past UTC date).
+ * 3. If outdated fixtures exist, fetch fresh details and update them.
+ * 4. Fetch the updated list and sort by `fixture.date` in ascending order (earliest first).
+ *
+ * @returns {Promise<Array>} - Returns an array of updated, sorted upcoming fixture documents.
+ * @throws {CustomError} - Throws an error if fetching or updating fails.
+ */
+const getAllUpcomingFixtures = async () => {
+  try {
+    // Step 1: Fetch upcoming fixtures from the database (status "NS" means "Not Started")
+    let upcomingFixtures = await SoccerFixture.find({ "status.short": "NS" });
+
+    // Get current UTC time
+    const nowUtc = moment.utc();
+
+    // Step 2: Identify fixtures that have a past date
+    const outdatedFixtures = upcomingFixtures.filter((fixture) =>
+      moment.utc(fixture.date).isBefore(nowUtc)
+    );
+
+    // Step 3: If there are outdated fixtures, fetch fresh details and update
+    if (outdatedFixtures.length > 0) {
+      console.log(
+        `🔄 Updating ${outdatedFixtures.length} outdated fixtures...`
+      );
+
+      // Extract fixture IDs
+      const outdatedFixtureIds = outdatedFixtures.map(
+        (fixture) => fixture.fixtureId
+      );
+
+      // Fetch fresh details from API
+      const freshDetails = await getFixtureDetails(outdatedFixtureIds);
+
+      // Update the fixtures in the database
+      await insertOrUpdateFixtures(freshDetails);
+    }
+
+    // Step 4: Fetch the latest upcoming fixtures after updates
+    upcomingFixtures = await SoccerFixture.find({ "status.short": "NS" });
+
+    // ✅ Sort fixtures by UTC time (earliest first)
+    upcomingFixtures.sort((a, b) =>
+      moment.utc(a.date).diff(moment.utc(b.date))
+    );
+
+    console.log(
+      "✅ Returning sorted upcoming fixtures:",
+      upcomingFixtures.length
+    );
+    return upcomingFixtures;
+  } catch (error) {
+    console.error(
+      "❌ Error fetching/updating upcoming fixtures:",
+      error.message
+    );
+    throw new CustomError(
+      error.message || "Failed to retrieve upcoming fixtures",
+      500
+    );
+  }
+};
+
+/**
+ * Process live fixtures and update them in the database.
+ *
+ * This method performs the following steps:
+ * 1. Calls `getLiveGamesFixtureIds()` to get a list of live fixture IDs.
+ * 2. Uses `getFixtureDetails()` to fetch the latest details for each fixture.
+ * 3. Updates or inserts the fetched fixture data into the database using `insertOrUpdateFixtures()`.
+ * 4. Returns the updated live fixture details.
+ *
+ * If no live fixtures are found, an empty array is returned.
+ * If fetching details for a fixture fails, the error is logged but does not stop the process.
+ *
+ * @returns {Promise<Array>} - Returns an array of updated live fixture documents.
+ * @throws {CustomError} - Throws an error if any critical operation fails.
+ */
+const processLiveFixtures = async () => {
+  try {
+    console.log("🔄 Fetching live fixture IDs...");
+
+    // Step 1: Get live fixture IDs
+    const liveFixtureIds = await getLiveGamesFixtureIds();
+
+    // If no live fixtures are found, return an empty array
+    if (!liveFixtureIds || liveFixtureIds.length === 0) {
+      console.log("⚠️ No live fixtures found.");
+      return [];
+    }
+
+    console.log(
+      `📊 Found ${liveFixtureIds.length} live fixtures. Fetching details...`
+    );
+
+    // Step 2: Fetch fixture details
+    const liveFixturesDetails = await getFixtureDetails(liveFixtureIds);
+
+    // Step 3: Insert or update fixture details in the database
+    if (liveFixturesDetails.length > 0) {
+      console.log(
+        `💾 Updating ${liveFixturesDetails.length} live fixtures in the database...`
+      );
+      await insertOrUpdateFixtures(liveFixturesDetails);
+    } else {
+      console.log("⚠️ No fixture details available to update.");
+    }
+
+    // Step 4: Fetch and return the latest live fixtures from the database
+    const updatedLiveFixtures = await SoccerFixture.find({
+      fixtureId: { $in: liveFixtureIds },
+    });
+
+    console.log(
+      "✅ Returning updated live fixtures:",
+      updatedLiveFixtures.length
+    );
+    return updatedLiveFixtures;
+  } catch (error) {
+    console.error("❌ Error processing live fixtures:", error.message);
+    throw new CustomError(
+      error.message || "Failed to fetch and update live fixtures",
+      500
+    );
+  }
+};
+
+/**
+ * Process live fixtures, update them in the database, and emit the results to all connected clients.
+ *
+ * This method performs the following steps:
+ * 1. Calls `processLiveFixtures()` to fetch live fixture IDs, get their details, and update them in the database.
+ * 2. Retrieves the latest live fixtures from the database.
+ * 3. Emits the updated live fixtures using `SocketService.emitToAll()`.
+ *
+ * If no live fixtures are found, an empty array is returned.
+ * If emitting fails, an error is logged but does not stop the process.
+ *
+ * @throws {CustomError} - Throws an error if updating or emitting fails.
+ */
+const processLiveFixturesAndEmit = async () => {
+  try {
+    console.log("🔄 Processing live fixtures and preparing for broadcast...");
+
+    // Step 1: Process and update live fixtures
+    const liveFixtures = await processLiveFixtures();
+
+    if (!liveFixtures || liveFixtures.length === 0) {
+      console.log("⚠️ No live fixtures available to emit.");
+      //remove the recurring job
+      await removeRecurringJob("fetchLiveScores");
+      //schedule the live score polling job
+      await scheduleLiveScoreJob();
+      return [];
+    }
+
+    console.log(
+      `📢 Broadcasting ${liveFixtures.length} live fixtures to all clients...`
+    );
+
+    // Step 2: Emit the live fixtures using WebSockets
+    const response = {
+      success: true,
+      message: "Live fixtures processed successfully",
+      data: liveFixtures,
+    };
+
+    SocketService.emitToAll("liveFixtures", response, (ack) => {
+      console.log("✅ Acknowledgment received from clients:", ack);
+    });
+
+    return liveFixtures;
+  } catch (error) {
+    console.error(
+      "❌ Error processing and emitting live fixtures:",
+      error.message
+    );
+    throw new CustomError(
+      error.message || "Failed to process and emit live fixtures",
+      500
+    );
+  }
+};
+
 module.exports = {
   getLiveGamesFixtureIds,
   getFixtureDetails,
   insertOrUpdateFixtures,
   getUpcomingFixtures,
   upcomingFixtures,
-  processUpcomingFixturesandEmit
+  processUpcomingFixturesandEmit,
+  getAllUpcomingFixtures,
+  processLiveFixtures,
+  processLiveFixturesAndEmit,
 };
