@@ -16,7 +16,8 @@ const initJobSchedulers = () => {
   // Schedule the upcoming fixtures job (runs every 24 hours)
   scheduleRecurringJob("fetchUpcomingFixtures", {}, 24 * 60 * 60 * 1000);
 
-  //   scheduleRecurringJob("fetchUpcomingFixtures", {}, 1 * 60 * 1000)
+  // Schedule the upcoming fixture odds job (runs every 4 hours)
+  scheduleRecurringJob("fetchUpcomingFixtureOdds", {}, 4 * 60 * 60 * 1000);
 
   console.log("✅ All recurring jobs scheduled!");
 };
