@@ -155,10 +155,104 @@ const fetchUpcomingFixtureOdds = async () => {
   }
 };
 
+
+
+
+
+/**
+ * Process upcoming fixture odds, update them in the database, and emit the results to all connected clients.
+ *
+ * This method performs the following steps:
+ * 1. Calls `fetchUpcomingFixtureOdds()` to fetch and update odds data for all upcoming fixtures.
+ * 2. Emits the updated odds data using `SocketService.emitToAll()`.
+ *
+ * If no odds are found, an empty array is returned.
+ * If emitting fails, an error is logged but does not stop the process.
+ *
+ * @throws {CustomError} - Throws an error if updating or emitting fails.
+ */
+const processUpcomingFixturesOddsAndEmit = async () => {
+  try {
+    console.log("🔄 Processing upcoming fixture odds...");
+
+    // Step 1: Fetch and update odds for upcoming fixtures
+    const updatedOdds = await fetchUpcomingFixtureOdds();
+
+    if (!updatedOdds || updatedOdds.length === 0) {
+      console.log("⚠️ No odds data available to emit.");
+      return [];
+    }
+
+    console.log(`📢 Broadcasting odds for ${updatedOdds.length} fixtures to all clients...`);
+
+    // Step 2: Emit the updated odds data using WebSockets
+    const response = {
+      success: true,
+      message: "Upcoming fixture odds processed successfully",
+      data: updatedOdds,
+    };
+
+    SocketService.emitToAll("soccerupcomingFixtureOdds", response, (ack) => {
+      console.log("✅ Acknowledgment received from clients:", ack);
+    });
+
+    return updatedOdds;
+  } catch (error) {
+    console.error("❌ Error processing and emitting fixture odds:", error.message);
+    throw new CustomError(error.message || "Failed to process and emit fixture odds", 500);
+  }
+};
+
+
+
+
+
+/**
+ * Fetch live in-play odds by fixture ID from the API.
+ * @param {number} fixtureId - The ID of the fixture.
+ * @returns {Promise<Object>} - Returns the fetched live odds data.
+ */
+const getInPlayOdds = async (fixtureId) => {
+  try {
+    console.log(`🔄 Fetching live in-play odds for fixture ID: ${fixtureId}...`);
+
+    const options = {
+      method: "GET",
+      url: "https://api-football-v1.p.rapidapi.com/v3/odds/live",
+      params: { fixture: fixtureId },
+      headers: {
+        "x-rapidapi-key": process.env.SOCCER_API_KEY, // Secure API Key
+        "x-rapidapi-host": "api-football-v1.p.rapidapi.com",
+      },
+    };
+
+    const response = await axios.request(options);
+
+    if (!response.data || !response.data.response) {
+      console.log(`⚠️ No live odds data found for fixture ID: ${fixtureId}`);
+      return null;
+    }
+
+    console.log(`✅ Live in-play odds fetched successfully for fixture ID: ${fixtureId}`);
+    return response.data.response;
+  } catch (error) {
+    console.error(`❌ Error fetching live in-play odds for fixture ID ${fixtureId}:`, error.message);
+    throw new CustomError(error.message || "Failed to fetch live in-play odds", 500);
+  }
+};
+
+
+
+
+
+
+
 module.exports = {
   getOddsByFixtureId,
   insertOrUpdateOdds,
   fetchUpcomingFixtureOdds,
+  processUpcomingFixturesOddsAndEmit,
+  getInPlayOdds
 };
 
 
