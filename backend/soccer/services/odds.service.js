@@ -1,7 +1,6 @@
 const axios = require("axios");
 const SoccerFixturesOdds = require("../models/odds.model");
 const CustomError = require("../../utils/customError");
-const { getAllUpcomingFixtures } = require("./fixtures.service");
 
 /**
  * Fetch odds by fixtureId from the API
@@ -107,6 +106,8 @@ const fetchUpcomingFixtureOdds = async () => {
   try {
     console.log("🔄 Fetching upcoming fixtures...");
     
+const { getAllUpcomingFixtures } = require("./fixtures.service");
+
     // Step 1: Get all upcoming fixtures
     const upcomingFixtures = await getAllUpcomingFixtures();
 

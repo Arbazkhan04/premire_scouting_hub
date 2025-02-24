@@ -30,7 +30,7 @@ const scheduleLiveScoreRecurringJob = async () => {
   await scheduleRecurringJob("fetchLiveScores", {}, 60 * 1000);
 
   //remove job
-  await removeJobsByName("startLiveScorePolling")
+  await removeJobsByName("startLiveScorePolling");
 };
 
 /**
@@ -65,9 +65,11 @@ const scheduleLiveScoreJob = async () => {
       return;
     }
 
-    const checkLiveFixtures= await processLiveFixtures()
-    if(checkLiveFixtures.length>0){
-      console.log("⚠️ Live fixtures are already running, scheduling live job now...");
+    const checkLiveFixtures = await processLiveFixtures();
+    if (checkLiveFixtures.length > 0) {
+      console.log(
+        "⚠️ Live fixtures are already running, scheduling live job now..."
+      );
       await scheduleLiveScoreRecurringJob();
       return;
     }
@@ -76,7 +78,7 @@ const scheduleLiveScoreJob = async () => {
     const matchTimeUtc = moment.utc(earliestFixture.date);
     const delayInMs = matchTimeUtc.diff(nowUtc) - 60 * 1000;
 
-    if (delayInMs <= 0) {
+    if (delayInMs <= 0 && checkLiveFixtures.length > 0) {
       console.log(
         "⚠️ Earliest match is already starting or past, scheduling live job now..."
       );
