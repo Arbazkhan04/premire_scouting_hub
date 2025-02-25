@@ -52,6 +52,7 @@ const soccerOddsManagement = require("./soccer/routes/odds.routes");
 const americanFootballLeagueManagement = require("./american-Football/routes/leagues.routes");
 const americanFootballTeamsManagement = require("./american-Football/routes/teams.routes");
 const americanFootballPlayersManagement = require("./american-Football/routes/player.route");
+const americanFootballGamesManagement = require("./american-Football/routes/games.routes");
 
 app.use("/api/v1/auth", userManagementRoutes);
 app.use("/api/v1/favourites", favouritesManagementRoutes);
@@ -65,6 +66,7 @@ app.use("/api/v1/soccer/odds", soccerOddsManagement);
 app.use("/api/v1/american-football/league", americanFootballLeagueManagement);
 app.use("/api/v1/american-football/team", americanFootballTeamsManagement);
 app.use("/api/v1/american-football/player", americanFootballPlayersManagement);
+app.use("/api/v1/american-football/games", americanFootballGamesManagement);
 
 // Error Handling Middleware
 app.use(errorHandler);

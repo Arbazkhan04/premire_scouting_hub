@@ -222,4 +222,11 @@ const SoccerGameSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+
+// ✅ Compound Index for Faster Queries
+SoccerGameSchema.index({ "status.short": 1, "league.id": 1, date: -1 });
+
+
+
+
 module.exports = mongoose.model("SoccerFixtures", SoccerGameSchema);
