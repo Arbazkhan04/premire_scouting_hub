@@ -174,6 +174,59 @@ const updateLeagueTeams = async (leagueId, season, teamsData) => {
   }
 };
 
+
+
+
+
+/**
+ * Get the latest season for all leagues.
+ * @returns {Promise<Array>} - List of leagues with their latest season object.
+ * @throws {CustomError} - Throws error if no leagues or seasons are found.
+ */
+const getLatestSeasonForAllLeagues = async () => {
+  try {
+    // Fetch all leagues from the database
+    const leagues = await AmericanFootballLeague.find();
+
+    if (!leagues || leagues.length === 0) {
+      throw new CustomError("No leagues found in the database", 404);
+    }
+
+    const leaguesWithLatestSeasons = leagues.map((league) => {
+      if (!league.seasons || league.seasons.length === 0) {
+        console.warn(`⚠️ No seasons found for league: ${league.name} (ID: ${league.leagueId})`);
+        return {
+          leagueId: league.leagueId,
+          name: league.name,
+          latestSeason: null, // No seasons available
+        };
+      }
+
+      // Step 1: Check if there's a season with `current: true`
+      let latestSeason = league.seasons.find((s) => s.current === true);
+
+      // Step 2: If no `current: true`, find the most recent season by sorting
+      if (!latestSeason) {
+        latestSeason = league.seasons.sort((a, b) => b.year - a.year)[0]; // Get the most recent season
+      }
+
+      return {
+        leagueId: league.leagueId,
+        name: league.name,
+        latestSeason: latestSeason || null, // Return season object or null if none found
+      };
+    });
+
+    return leaguesWithLatestSeasons;
+  } catch (error) {
+    console.error("Error getting latest seasons for all leagues:", error.message);
+    throw new CustomError("Failed to retrieve latest seasons for all leagues", 500);
+  }
+};
+
+
+
+
 module.exports = {
   fetchLeaguesFromAPI,
   saveLeagueToDB,
@@ -181,4 +234,5 @@ module.exports = {
   getAllLeagues,
   getLeagueById,
   updateLeagueTeams,
+  getLatestSeasonForAllLeagues
 };

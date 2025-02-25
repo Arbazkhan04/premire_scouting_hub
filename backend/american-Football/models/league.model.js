@@ -56,6 +56,14 @@ const AmericanFootballLeagueSchema = new mongoose.Schema(
         ],
       },
     ],
+    // New field to track games fetched status
+    gamesFetched: [
+      {
+        season: { type: Number, required: true }, // Season year
+        fetched: { type: Boolean, default: false }, // Whether games were fetched
+        updatedOn: { type: Date, default: Date.now }, // Timestamp of last update
+      },
+    ],
   },
   {
     timestamps: true, // Adds createdAt and updatedAt fields

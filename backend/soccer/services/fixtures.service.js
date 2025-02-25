@@ -87,64 +87,127 @@ const getFixtureDetails = async (fixtureIds) => {
   }
 };
 
-/**
- * Insert or update fixtures in the database.
- * @param {Array<Object>|Object} fixtureData - Single or multiple fixture objects.
- * @returns {Promise<Array>} - Array of saved fixture documents.
- * @throws {CustomError} - Throws error if database operation fails.
- */
+// /**
+//  * Insert or update fixtures in the database.
+//  * @param {Array<Object>|Object} fixtureData - Single or multiple fixture objects.
+//  * @returns {Promise<Array>} - Array of saved fixture documents.
+//  * @throws {CustomError} - Throws error if database operation fails.
+//  */
+// const insertOrUpdateFixtures = async (fixtureData) => {
+//   try {
+//     if (!fixtureData) {
+//       throw new CustomError("No fixture data provided", 400);
+//     }
+
+//     // Convert single fixture object into an array for bulk processing
+//     const fixturesArray = Array.isArray(fixtureData)
+//       ? fixtureData
+//       : [fixtureData];
+
+//     // Use bulk operations for efficiency
+//     const bulkOperations = fixturesArray.map((fixture) => ({
+//       updateOne: {
+//         filter: { fixtureId: fixture.fixture.id }, // Find by fixture ID
+//         update: {
+//           $set: {
+//             fixtureId: fixture.fixture.id,
+//             date: fixture.fixture.date,
+//             venue: fixture.fixture.venue,
+//             status: fixture.fixture.status,
+//             league: fixture.league,
+//             teams: fixture.teams,
+//             goals: fixture.goals,
+//             score: fixture.score,
+//             events: fixture.events,
+//             statistics: fixture.statistics,
+//             players: fixture.players,
+//           },
+//         },
+//         upsert: true, // Insert if not exists, update if exists
+//       },
+//     }));
+
+//     // Execute bulk write operation
+//     const result = await SoccerFixture.bulkWrite(bulkOperations);
+
+//     // ✅ Fetch the updated or inserted documents
+//     const updatedFixtures = await SoccerFixture.find({
+//       fixtureId: { $in: fixturesArray.map((f) => f.fixture.id) },
+//     });
+
+//     // console.log("✅ Fixtures inserted/updated:", updatedFixtures);
+//     return updatedFixtures; // ✅ Return actual updated documents
+//   } catch (error) {
+//     console.error("Error inserting/updating fixtures:", error.message);
+//     throw new CustomError(
+//       error.message || "Failed to insert/update fixtures",
+//       500
+//     );
+//   }
+// };
+
+
+
+
+
+
+
+
 const insertOrUpdateFixtures = async (fixtureData) => {
   try {
     if (!fixtureData) {
       throw new CustomError("No fixture data provided", 400);
     }
 
-    // Convert single fixture object into an array for bulk processing
-    const fixturesArray = Array.isArray(fixtureData)
-      ? fixtureData
-      : [fixtureData];
+    const fixturesArray = Array.isArray(fixtureData) ? fixtureData : [fixtureData];
 
-    // Use bulk operations for efficiency
-    const bulkOperations = fixturesArray.map((fixture) => ({
-      updateOne: {
-        filter: { fixtureId: fixture.fixture.id }, // Find by fixture ID
-        update: {
-          $set: {
-            fixtureId: fixture.fixture.id,
-            date: fixture.fixture.date,
-            venue: fixture.fixture.venue,
-            status: fixture.fixture.status,
-            league: fixture.league,
-            teams: fixture.teams,
-            goals: fixture.goals,
-            score: fixture.score,
-            events: fixture.events,
-            statistics: fixture.statistics,
-            players: fixture.players,
+    const CHUNK_SIZE = 100;
+    const promises = [];
+
+    for (let i = 0; i < fixturesArray.length; i += CHUNK_SIZE) {
+      const chunk = fixturesArray.slice(i, i + CHUNK_SIZE);
+      const bulkOperations = chunk.map((fixture) => ({
+        updateOne: {
+          filter: { fixtureId: fixture.fixture.id },
+          update: {
+            $set: {
+              fixtureId: fixture.fixture.id,
+              date: fixture.fixture.date,
+              venue: fixture.fixture.venue,
+              status: fixture.fixture.status,
+              league: fixture.league,
+              teams: fixture.teams,
+              goals: fixture.goals,
+              score: fixture.score,
+              events: fixture.events,
+              statistics: fixture.statistics,
+              players: fixture.players,
+            },
           },
+          upsert: true,
         },
-        upsert: true, // Insert if not exists, update if exists
-      },
-    }));
+      }));
 
-    // Execute bulk write operation
-    const result = await SoccerFixture.bulkWrite(bulkOperations);
+      // Execute write in parallel
+      promises.push(SoccerFixture.bulkWrite(bulkOperations));
+    }
 
-    // ✅ Fetch the updated or inserted documents
-    const updatedFixtures = await SoccerFixture.find({
-      fixtureId: { $in: fixturesArray.map((f) => f.fixture.id) },
-    });
+    await Promise.all(promises);
 
-    // console.log("✅ Fixtures inserted/updated:", updatedFixtures);
-    return updatedFixtures; // ✅ Return actual updated documents
+    console.log(`✅ ${fixturesArray.length} Fixtures inserted/updated`);
+    
+    return { success: true, updatedCount: fixturesArray.length };
   } catch (error) {
     console.error("Error inserting/updating fixtures:", error.message);
-    throw new CustomError(
-      error.message || "Failed to insert/update fixtures",
-      500
-    );
+    throw new CustomError("Failed to insert/update fixtures", 500);
   }
 };
+
+
+
+
+
+
 
 /**
  * Fetch upcoming 10 fixtures for given league IDs.
@@ -272,61 +335,61 @@ const processUpcomingFixturesandEmit = async () => {
  * @returns {Promise<Array>} - Returns an array of updated, sorted upcoming fixture documents.
  * @throws {CustomError} - Throws an error if fetching or updating fails.
  */
-const getAllUpcomingFixtures = async () => {
-  try {
-    // Step 1: Fetch upcoming fixtures from the database (status "NS" means "Not Started")
-    let upcomingFixtures = await SoccerFixture.find({ "status.short": "NS" });
+// const getAllUpcomingFixtures = async () => {
+//   try {
+//     // Step 1: Fetch upcoming fixtures from the database (status "NS" means "Not Started")
+//     let upcomingFixtures = await SoccerFixture.find({ "status.short": "NS" });
 
-    // Get current UTC time
-    const nowUtc = moment.utc();
+//     // Get current UTC time
+//     const nowUtc = moment.utc();
 
-    // Step 2: Identify fixtures that have a past date
-    const outdatedFixtures = upcomingFixtures.filter((fixture) =>
-      moment.utc(fixture.date).isBefore(nowUtc)
-    );
+//     // Step 2: Identify fixtures that have a past date
+//     const outdatedFixtures = upcomingFixtures.filter((fixture) =>
+//       moment.utc(fixture.date).isBefore(nowUtc)
+//     );
 
-    // Step 3: If there are outdated fixtures, fetch fresh details and update
-    if (outdatedFixtures.length > 0) {
-      console.log(
-        `🔄 Updating ${outdatedFixtures.length} outdated fixtures...`
-      );
+//     // Step 3: If there are outdated fixtures, fetch fresh details and update
+//     if (outdatedFixtures.length > 0) {
+//       console.log(
+//         `🔄 Updating ${outdatedFixtures.length} outdated fixtures...`
+//       );
 
-      // Extract fixture IDs
-      const outdatedFixtureIds = outdatedFixtures.map(
-        (fixture) => fixture.fixtureId
-      );
+//       // Extract fixture IDs
+//       const outdatedFixtureIds = outdatedFixtures.map(
+//         (fixture) => fixture.fixtureId
+//       );
 
-      // Fetch fresh details from API
-      const freshDetails = await getFixtureDetails(outdatedFixtureIds);
+//       // Fetch fresh details from API
+//       const freshDetails = await getFixtureDetails(outdatedFixtureIds);
 
-      // Update the fixtures in the database
-      await insertOrUpdateFixtures(freshDetails);
-    }
+//       // Update the fixtures in the database
+//       await insertOrUpdateFixtures(freshDetails);
+//     }
 
-    // Step 4: Fetch the latest upcoming fixtures after updates
-    upcomingFixtures = await SoccerFixture.find({ "status.short": "NS" });
+//     // Step 4: Fetch the latest upcoming fixtures after updates
+//     upcomingFixtures = await SoccerFixture.find({ "status.short": "NS" });
 
-    // ✅ Sort fixtures by UTC time (earliest first)
-    upcomingFixtures.sort((a, b) =>
-      moment.utc(a.date).diff(moment.utc(b.date))
-    );
+//     // ✅ Sort fixtures by UTC time (earliest first)
+//     upcomingFixtures.sort((a, b) =>
+//       moment.utc(a.date).diff(moment.utc(b.date))
+//     );
 
-    console.log(
-      "✅ Returning sorted upcoming fixtures:",
-      upcomingFixtures.length
-    );
-    return upcomingFixtures;
-  } catch (error) {
-    console.error(
-      "❌ Error fetching/updating upcoming fixtures:",
-      error.message
-    );
-    throw new CustomError(
-      error.message || "Failed to retrieve upcoming fixtures",
-      500
-    );
-  }
-};
+//     console.log(
+//       "✅ Returning sorted upcoming fixtures:",
+//       upcomingFixtures.length
+//     );
+//     return upcomingFixtures;
+//   } catch (error) {
+//     console.error(
+//       "❌ Error fetching/updating upcoming fixtures:",
+//       error.message
+//     );
+//     throw new CustomError(
+//       error.message || "Failed to retrieve upcoming fixtures",
+//       500
+//     );
+//   }
+// };
 
 // /**
 //  * Process live fixtures and update them in the database.
@@ -391,6 +454,43 @@ const getAllUpcomingFixtures = async () => {
 //     );
 //   }
 // };
+
+
+
+
+const getAllUpcomingFixtures = async () => {
+  try {
+    console.log("🔄 Fetching upcoming fixtures from DB...");
+
+    // Step 1: Fetch upcoming fixtures (status "NS" means "Not Started")
+    let upcomingFixtures = await SoccerFixture.find({ "status.short": "NS" })
+      .sort({ date: 1 }) // ✅ Sort by earliest match first
+      .lean(); // ✅ Convert to plain objects for performance
+
+    // If no fixtures are found, return an empty array
+    if (!upcomingFixtures.length) {
+      console.log("⚠️ No upcoming fixtures found.");
+      return [];
+    }
+
+    // Step 2: Group fixtures by league
+    const groupedFixtures = Object.entries(soccerLeagues).map(([leagueName, leagueId]) => {
+      const leagueFixtures = upcomingFixtures.filter((fixture) => fixture.league.id === leagueId);
+
+      return {
+        leagueId,
+        leagueName,
+        fixtures: leagueFixtures,
+      };
+    });
+
+    console.log(`✅ Returning upcoming fixtures for ${groupedFixtures.length} leagues.`);
+    return groupedFixtures.filter((league) => league.fixtures.length > 0);
+  } catch (error) {
+    console.error("❌ Error fetching upcoming fixtures:", error.message);
+    throw new CustomError("Failed to retrieve upcoming fixtures", 500);
+  }
+};
 
 
 
@@ -610,34 +710,37 @@ const processFinishedFixtures = async () => {
     // Step 3: Insert or update fixtures in the database
     const updatedFixtures = await insertOrUpdateFixtures(fixtureDetails);
 
-    // Step 4: Organize response by league
-    const groupedFixtures = {};
+    // // Step 4: Organize response by league
+    // const groupedFixtures = {};
 
-    updatedFixtures.forEach((fixture) => {
-      const leagueId = fixture.league.id;
-      const leagueName = fixture.league.name;
+    // updatedFixtures.forEach((fixture) => {
+    //   const leagueId = fixture.league.id;
+    //   const leagueName = fixture.league.name;
 
-      if (!groupedFixtures[leagueId]) {
-        groupedFixtures[leagueId] = {
-          leagueName,
-          fixtures: [],
-        };
-      }
+    //   if (!groupedFixtures[leagueId]) {
+    //     groupedFixtures[leagueId] = {
+    //       leagueName,
+    //       fixtures: [],
+    //     };
+    //   }
 
-      groupedFixtures[leagueId].fixtures.push({
-        fixtureId: fixture.fixtureId,
-        date: fixture.date,
-        homeTeam: fixture.teams.home.name,
-        awayTeam: fixture.teams.away.name,
-        score: fixture.score.fulltime,
-      });
-    });
+    //   groupedFixtures[leagueId].fixtures.push({
+    //     fixtureId: fixture.fixtureId,
+    //     date: fixture.date,
+    //     homeTeam: fixture.teams.home.name,
+    //     awayTeam: fixture.teams.away.name,
+    //     score: fixture.score.fulltime,
+    //   });
+    // });
+
+    //get all completed fixtures from db
+    const completedFixturesfromDB = await getCompletedFixturesFromDB()
 
     console.log("✅ Finished processing completed fixtures.");
     return {
       success: true,
       message: "Finished fixtures processed successfully.",
-      data: groupedFixtures, // Structured response grouped by league
+      data: completedFixturesfromDB, // Structured response grouped by league
     };
   } catch (error) {
     console.error("❌ Error processing finished fixtures:", error.message);
@@ -647,6 +750,99 @@ const processFinishedFixtures = async () => {
     );
   }
 };
+
+
+
+
+
+
+
+
+/**
+ * Fetch upcoming fixtures from the database where status.short == "NS".
+ * Group them by league and sort by fixture time.
+ *
+ * @returns {Promise<Array>} - Upcoming fixtures grouped by league.
+ */
+const getUpcomingFixturesFromDB = async () => {
+  try {
+    console.log("🔄 Fetching upcoming fixtures from DB...");
+
+    // Step 1: Retrieve all upcoming fixtures (status "NS" = Not Started)
+    const upcomingFixtures = await SoccerFixture.find({ "status.short": "NS" })
+      .sort({ date: 1 }) // Sort by fixture date (earliest first)
+      .lean(); // Convert to plain objects for better performance
+
+    if (!upcomingFixtures.length) {
+      console.log("⚠️ No upcoming fixtures found.");
+      return [];
+    }
+
+    // Step 2: Group fixtures by league
+    const groupedFixtures = Object.entries(soccerLeagues).map(([leagueName, leagueId]) => {
+      const leagueFixtures = upcomingFixtures.filter((fixture) => fixture.league.id === leagueId);
+
+      return {
+        leagueId,
+        leagueName,
+        fixtures: leagueFixtures,
+      };
+    });
+
+    console.log(`✅ Found ${upcomingFixtures.length} upcoming fixtures.`);
+    return groupedFixtures.filter((league) => league.fixtures.length > 0);
+  } catch (error) {
+    console.error("❌ Error fetching upcoming fixtures:", error.message);
+    throw new Error("Failed to fetch upcoming fixtures from database");
+  }
+};
+
+
+
+
+// /**
+//  * Fetch last 10 completed fixtures for each league from the database (status.short == "FT").
+//  * Group them by league.
+//  *
+//  * @returns {Promise<Array>} - Completed fixtures grouped by league.
+//  */
+const getCompletedFixturesFromDB = async () => {
+  try {
+    console.log("🔄 Fetching completed fixtures from DB...");
+
+    // Step 1: Fetch all completed fixtures (status "FT" means "Finished")
+    let completedFixtures = await SoccerFixture.find({ "status.short": "FT" })
+      .sort({ date: -1 }) // ✅ Sort by most recent first (MongoDB sorting is fast)
+      .lean(); // ✅ Convert to plain objects for performance boost
+
+    // If no fixtures are found, return an empty array
+    if (!completedFixtures.length) {
+      console.log("⚠️ No completed fixtures found.");
+      return [];
+    }
+
+    // Step 2: Group fixtures by league
+    const groupedFixtures = Object.entries(soccerLeagues).map(([leagueName, leagueId]) => {
+      const leagueFixtures = completedFixtures
+        .filter((fixture) => fixture.league.id === leagueId)
+        .slice(0, 10); // ✅ Take the last 10 fixtures per league
+
+      return {
+        leagueId,
+        leagueName,
+        fixtures: leagueFixtures,
+      };
+    });
+
+    console.log(`✅ Returning completed fixtures for ${groupedFixtures.length} leagues.`);
+    return groupedFixtures.filter((league) => league.fixtures.length > 0);
+  } catch (error) {
+    console.error("❌ Error fetching completed fixtures:", error.message);
+    throw new Error("Failed to fetch completed fixtures from database");
+  }
+};
+
+
 
 module.exports = {
   getLiveGamesFixtureIds,
@@ -659,4 +855,6 @@ module.exports = {
   processLiveFixtures,
   processLiveFixturesAndEmit,
   processFinishedFixtures,
+  getUpcomingFixturesFromDB,
+  getCompletedFixturesFromDB
 };
