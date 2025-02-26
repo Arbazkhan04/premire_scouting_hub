@@ -799,19 +799,19 @@ const getUpcomingFixturesFromDB = async () => {
 
 
 
-
-// /**
-//  * Fetch last 10 completed fixtures for each league from the database (status.short == "FT").
-//  * Group them by league.
-//  *
-//  * @returns {Promise<Array>} - Completed fixtures grouped by league.
-//  */
+/**
+ * Fetch last 10 completed fixtures for each league from the database (status.short == "FT").
+ * Group them by league with only required fields.
+ *
+ * @returns {Promise<Array>} - Completed fixtures grouped by league.
+ */
 const getCompletedFixturesFromDB = async () => {
   try {
     console.log("🔄 Fetching completed fixtures from DB...");
 
-    // Step 1: Fetch all completed fixtures (status "FT" means "Finished")
+    // Step 1: Fetch all completed fixtures (status "FT" means "Finished") with only required fields
     let completedFixtures = await SoccerFixture.find({ "status.short": "FT" })
+      .select("fixtureId league goals teams date") // ✅ Select only required fields
       .sort({ date: -1 }) // ✅ Sort by most recent first (MongoDB sorting is fast)
       .lean(); // ✅ Convert to plain objects for performance boost
 
@@ -844,6 +844,47 @@ const getCompletedFixturesFromDB = async () => {
 
 
 
+
+
+/**
+ * Fetch a single fixture by fixtureId.
+ * @param {number} fixtureId - The fixture ID to fetch.
+ * @returns {Promise<Object>} - The fixture document.
+ * @throws {CustomError} - Throws an error if the fixture is not found.
+ */
+const getFixtureById = async (fixtureId) => {
+  try {
+    if (!fixtureId) {
+      throw new CustomError("Fixture ID is required", 400);
+    }
+
+    console.log(`🔍 Fetching fixture with ID: ${fixtureId}`);
+
+    // Fetch the fixture from the database
+    const fixture = await SoccerFixture.findOne({ fixtureId })
+      .select("-_id fixtureId league teams date status goals score events")
+      .lean();
+
+    if (!fixture) {
+      throw new CustomError(`No fixture found with ID: ${fixtureId}`, 404);
+    }
+
+    console.log("✅ Fixture found:", fixture);
+    return fixture;
+  } catch (error) {
+    console.error("❌ Error fetching fixture by ID:", error.message);
+    throw new CustomError(
+      error.message || "Failed to fetch fixture by ID",
+      500
+    );
+  }
+};
+
+
+
+
+
+
 module.exports = {
   getLiveGamesFixtureIds,
   getFixtureDetails,
@@ -856,5 +897,6 @@ module.exports = {
   processLiveFixturesAndEmit,
   processFinishedFixtures,
   getUpcomingFixturesFromDB,
-  getCompletedFixturesFromDB
+  getCompletedFixturesFromDB,
+  getFixtureById
 };
