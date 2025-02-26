@@ -5,6 +5,7 @@ const {processUpcomingFixturesandEmit, processLiveFixturesAndEmit} =require("../
 const { scheduleLiveScoreRecurringJob } = require("../soccer/services/soccerJobs.service");
 const { removeJobsByName } = require("./jobManager");
 const { soccerQueue } = require("./jobQueue");
+const { processUpcomingFixturesOddsAndEmit } = require("../soccer/services/odds.service");
 
 // Create a worker to process jobs
 const soccerWorker = new Worker(
@@ -30,6 +31,12 @@ const soccerWorker = new Worker(
           console.log("📄 Startred Fetchlive score job started");
           await processLiveFixturesAndEmit()
           break;
+
+          case "fetchUpcomingFixtureOdds":
+            console.log("📄 upcoming fixtures odd job starting");
+          await processUpcomingFixturesOddsAndEmit()
+
+            break;
 
         default:
           console.log(`⚠️ Unknown job type: ${job.name}`);

@@ -459,14 +459,68 @@ const processUpcomingFixturesandEmit = async () => {
 
 
 
+// const getAllUpcomingFixtures = async () => {
+//   try {
+//     console.log("🔄 Fetching upcoming fixtures from DB...");
+
+//     // Step 1: Fetch upcoming fixtures (status "NS" means "Not Started")
+//     let upcomingFixtures = await SoccerFixture.find({ "status.short": "NS" })
+//       .sort({ date: 1 }) // ✅ Sort by earliest match first
+//       .lean(); // ✅ Convert to plain objects for performance
+
+//     // If no fixtures are found, return an empty array
+//     if (!upcomingFixtures.length) {
+//       console.log("⚠️ No upcoming fixtures found.");
+//       return [];
+//     }
+
+//     // Step 2: Group fixtures by league
+//     const groupedFixtures = Object.entries(soccerLeagues).map(([leagueName, leagueId]) => {
+//       const leagueFixtures = upcomingFixtures.filter((fixture) => fixture.league.id === leagueId);
+
+//       return {
+//         leagueId,
+//         leagueName,
+//         fixtures: leagueFixtures,
+//       };
+//     });
+
+//     console.log(`✅ Returning upcoming fixtures for ${groupedFixtures.length} leagues.`);
+//     return groupedFixtures.filter((league) => league.fixtures.length > 0);
+//   } catch (error) {
+//     console.error("❌ Error fetching upcoming fixtures:", error.message);
+//     throw new CustomError("Failed to retrieve upcoming fixtures", 500);
+//   }
+// };
+
+
+
+
+
+
+/**
+ * Fetch all upcoming fixtures from the database where status.short == "NS".
+ * Identify outdated fixtures and update them using fresh API data.
+ * Return a structured list of upcoming fixtures grouped by league.
+ *
+ * Steps:
+ * 1. Fetch upcoming fixtures from the database (status "NS" means "Not Started").
+ * 2. Identify outdated fixtures (fixtures with a past UTC date).
+ * 3. If outdated fixtures exist, fetch fresh details and update them in the database.
+ * 4. Fetch the updated list again and group fixtures by league.
+ * 5. Return the updated upcoming fixtures sorted by earliest match time.
+ *
+ * @returns {Promise<Array>} - Array of updated, sorted upcoming fixture documents grouped by league.
+ * @throws {CustomError} - Throws an error if fetching or updating fails.
+ */
 const getAllUpcomingFixtures = async () => {
   try {
     console.log("🔄 Fetching upcoming fixtures from DB...");
 
     // Step 1: Fetch upcoming fixtures (status "NS" means "Not Started")
     let upcomingFixtures = await SoccerFixture.find({ "status.short": "NS" })
-      .sort({ date: 1 }) // ✅ Sort by earliest match first
-      .lean(); // ✅ Convert to plain objects for performance
+      .sort({ date: 1 }) // Sort by earliest match first
+      .lean(); // Convert to plain objects for performance
 
     // If no fixtures are found, return an empty array
     if (!upcomingFixtures.length) {
@@ -474,7 +528,38 @@ const getAllUpcomingFixtures = async () => {
       return [];
     }
 
-    // Step 2: Group fixtures by league
+    console.log(`📌 Found ${upcomingFixtures.length} upcoming fixtures.`);
+
+    // Step 2: Get the current UTC time
+    const nowUtc = moment.utc();
+
+    // Step 3: Identify outdated fixtures (where fixture.date < current UTC time)
+    const outdatedFixtures = upcomingFixtures.filter((fixture) =>
+      moment.utc(fixture.date).isBefore(nowUtc)
+    );
+
+    if (outdatedFixtures.length > 0) {
+      console.log(`🔄 Found ${outdatedFixtures.length} outdated fixtures. Fetching fresh data...`);
+
+      // Step 4: Fetch fresh details for outdated fixtures
+      const freshFixtureIds = outdatedFixtures.map((fixture) => fixture.fixtureId);
+      const freshDetails = await getFixtureDetails(freshFixtureIds);
+
+      // Step 5: Update outdated fixtures in the database
+      if (freshDetails.length > 0) {
+        await insertOrUpdateFixtures(freshDetails);
+        console.log(`✅ Updated ${freshDetails.length} outdated fixtures.`);
+      }
+    }
+
+    // Step 6: Fetch the updated upcoming fixtures from DB again
+    upcomingFixtures = await SoccerFixture.find({ "status.short": "NS" })
+      .sort({ date: 1 }) // Sort by earliest match first
+      .lean();
+
+    console.log(`✅ Updated upcoming fixtures count: ${upcomingFixtures.length}`);
+
+    // Step 7: Group fixtures by league
     const groupedFixtures = Object.entries(soccerLeagues).map(([leagueName, leagueId]) => {
       const leagueFixtures = upcomingFixtures.filter((fixture) => fixture.league.id === leagueId);
 
@@ -492,6 +577,11 @@ const getAllUpcomingFixtures = async () => {
     throw new CustomError("Failed to retrieve upcoming fixtures", 500);
   }
 };
+
+
+
+
+
 
 
 
