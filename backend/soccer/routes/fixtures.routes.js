@@ -1,5 +1,5 @@
 const express = require("express");
-const { getUpcomingFixturesController, getAllLiveFixturesController, getCompletedFixturesController } = require("../controllers/fixtures.controller");
+const { getUpcomingFixturesController, getAllLiveFixturesController, getCompletedFixturesController, getFixtureByIdController } = require("../controllers/fixtures.controller");
 
 const router = express.Router();
 
@@ -14,6 +14,15 @@ router.get("/live", getAllLiveFixturesController);
 
 // Route to get completed fixtures
 router.get("/completed", getCompletedFixturesController);
+
+
+
+/**
+ * @route GET /api/fixtures/:fixtureId
+ * @desc Get a fixture by ID
+ * @access Public
+ */
+router.get("/fixtureById", getFixtureByIdController);
 
 
 module.exports = router;

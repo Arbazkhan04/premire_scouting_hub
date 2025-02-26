@@ -71,7 +71,7 @@ const removeJobsByName = async (jobName) => {
     }
   } catch (error) {
     throw new CustomError(
-      `Error removing jobs with name "${jobName}"`,
+     error.message || `Error removing jobs with name "${jobName}"`,
       error.statusCode || 500
     );
   }

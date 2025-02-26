@@ -2,8 +2,10 @@ const {
     getAllUpcomingFixtures,
     processLiveFixtures,
     processFinishedFixtures,
+    getFixtureById
   } = require("../services/fixtures.service");
   const CustomError = require("../../utils/customError");
+const responseHandler = require("../../utils/responseHandler");
   
   /**
    * Controller to get all upcoming fixtures.
@@ -99,10 +101,44 @@ const {
       );
     }
   };
+
+
+
+
+/**
+ * Controller to fetch a fixture by ID.
+ * @param {Object} req - The request object.
+ * @param {Object} res - The response object.
+ */
+const getFixtureByIdController = async (req, res, next) => {
+  try {
+    const { fixtureId } = req.query;
+
+    if (!fixtureId) {
+      throw new CustomError("Fixture ID is required", 400);
+    }
+
+    // Fetch the fixture by ID
+    const fixture = await getFixtureById(Number(fixtureId));
+
+    return responseHandler(
+      res,
+      200,
+      "Fixture fetched successfully",
+      fixture
+    );
+  } catch (error) {
+    console.error("❌ Error in getFixtureByIdController:", error.message);
+    next(error instanceof CustomError ? error : new CustomError(error.message, 500));
+  }
+};
+
+
   
   module.exports = {
     getUpcomingFixturesController,
     getAllLiveFixturesController,
     getCompletedFixturesController,
+    getFixtureByIdController
   };
   
