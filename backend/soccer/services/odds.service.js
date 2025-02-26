@@ -87,17 +87,90 @@ const insertOrUpdateOdds = async (oddsArray) => {
 };
 
 
+// /**
+//  * Fetch odds for all upcoming fixtures and update the database.
+//  * 
+//  * This method performs the following steps:
+//  * 1. Retrieves all upcoming fixtures using `getAllUpcomingFixtures()`.
+//  * 2. Fetches odds for each fixture by calling `getOddsByFixtureId(fixtureId)`.
+//  * 3. Inserts or updates the fetched odds data using `insertOrUpdateOdds(oddsArray)`.
+//  * 4. Returns the updated odds for all upcoming fixtures.
+//  * 
+//  * If no upcoming fixtures are found, an empty array is returned.
+//  * If fetching odds for a fixture fails, the error is logged but does not stop the process.
+//  * 
+//  * @returns {Promise<Array>} - Returns an array of updated odds data for upcoming fixtures.
+//  * @throws {CustomError} - Throws an error if any critical operation fails.
+//  */
+// const fetchUpcomingFixtureOdds = async () => {
+//   try {
+//     console.log("🔄 Fetching upcoming fixtures...");
+    
+// const { getAllUpcomingFixtures } = require("./fixtures.service");
+
+//     // Step 1: Get all upcoming fixtures
+//     const allUpcomingFixtures = await getAllUpcomingFixtures();
+// const upcomingFixtures=allUpcomingFixtures?.fixtures;
+
+//     // If no upcoming fixtures are found, return an empty array
+//     if (!upcomingFixtures || upcomingFixtures.length === 0) {
+//       console.log("⚠️ No upcoming fixtures found.");
+//       return [];
+//     }
+
+//     console.log(`📊 Found ${upcomingFixtures.length} upcoming fixtures. Fetching odds...`);
+
+//     let allOdds = [];
+
+//     // Step 2: Fetch odds for each upcoming fixture
+//     for (const fixture of upcomingFixtures) {
+//       try {
+//         console.log(`⚽ Fetching odds for fixture ID: ${fixture.fixtureId}...`);
+
+//         // Fetch odds from API
+//         const oddsData = await getOddsByFixtureId(fixture.fixtureId);
+
+//         if (oddsData.length > 0) {
+//           allOdds.push(...oddsData);
+//         }
+
+//       } catch (error) {
+//         console.error(`❌ Failed to fetch odds for fixture ID ${fixture.fixtureId}:`, error.message);
+//       }
+//     }
+
+//     // Step 3: Insert or update odds in the database
+//     if (allOdds.length > 0) {
+//       console.log(`💾 Updating odds for ${allOdds.length} fixtures...`);
+//       await insertOrUpdateOdds(allOdds);
+//     } else {
+//       console.log("⚠️ No odds data available to update.");
+//     }
+
+//     // Step 4: Return the updated odds from the database
+//     console.log("✅ Returning updated odds for upcoming fixtures.");
+//     return allOdds;
+
+//   } catch (error) {
+//     console.error("❌ Error fetching upcoming fixture odds:", error.message);
+//     throw new CustomError(error.message || "Failed to fetch and update odds for upcoming fixtures", 500);
+//   }
+// };
+
+
+
+
+
+
+
 /**
  * Fetch odds for all upcoming fixtures and update the database.
  * 
- * This method performs the following steps:
- * 1. Retrieves all upcoming fixtures using `getAllUpcomingFixtures()`.
- * 2. Fetches odds for each fixture by calling `getOddsByFixtureId(fixtureId)`.
- * 3. Inserts or updates the fetched odds data using `insertOrUpdateOdds(oddsArray)`.
+ * Steps:
+ * 1. Retrieves all upcoming fixtures grouped by leagues.
+ * 2. Iterates through each league and fetches odds for every fixture.
+ * 3. Inserts or updates the fetched odds data.
  * 4. Returns the updated odds for all upcoming fixtures.
- * 
- * If no upcoming fixtures are found, an empty array is returned.
- * If fetching odds for a fixture fails, the error is logged but does not stop the process.
  * 
  * @returns {Promise<Array>} - Returns an array of updated odds data for upcoming fixtures.
  * @throws {CustomError} - Throws an error if any critical operation fails.
@@ -105,36 +178,35 @@ const insertOrUpdateOdds = async (oddsArray) => {
 const fetchUpcomingFixtureOdds = async () => {
   try {
     console.log("🔄 Fetching upcoming fixtures...");
-    
-const { getAllUpcomingFixtures } = require("./fixtures.service");
+    const { getAllUpcomingFixtures } = require("./fixtures.service");
+    // Step 1: Get all upcoming fixtures (Grouped by leagues)
+    const groupedUpcomingFixtures = await getAllUpcomingFixtures();
 
-    // Step 1: Get all upcoming fixtures
-    const upcomingFixtures = await getAllUpcomingFixtures();
-
-    // If no upcoming fixtures are found, return an empty array
-    if (!upcomingFixtures || upcomingFixtures.length === 0) {
+    if (!groupedUpcomingFixtures || groupedUpcomingFixtures.length === 0) {
       console.log("⚠️ No upcoming fixtures found.");
       return [];
     }
 
-    console.log(`📊 Found ${upcomingFixtures.length} upcoming fixtures. Fetching odds...`);
+    console.log(`📊 Found ${groupedUpcomingFixtures.length} leagues with upcoming fixtures.`);
 
     let allOdds = [];
 
-    // Step 2: Fetch odds for each upcoming fixture
-    for (const fixture of upcomingFixtures) {
-      try {
-        console.log(`⚽ Fetching odds for fixture ID: ${fixture.fixtureId}...`);
+    // Step 2: Loop through each league and fetch fixture odds
+    for (const league of groupedUpcomingFixtures) {
+      for (const fixture of league.fixtures) {
+        try {
+          console.log(`⚽ Fetching odds for fixture ID: ${fixture.fixtureId} in league: ${league.leagueName}...`);
 
-        // Fetch odds from API
-        const oddsData = await getOddsByFixtureId(fixture.fixtureId);
+          // Fetch odds from API
+          const oddsData = await getOddsByFixtureId(fixture.fixtureId);
 
-        if (oddsData.length > 0) {
-          allOdds.push(...oddsData);
+          if (oddsData.length > 0) {
+            allOdds.push(...oddsData);
+          }
+
+        } catch (error) {
+          console.error(`❌ Failed to fetch odds for fixture ID ${fixture.fixtureId}:`, error.message);
         }
-
-      } catch (error) {
-        console.error(`❌ Failed to fetch odds for fixture ID ${fixture.fixtureId}:`, error.message);
       }
     }
 
@@ -155,7 +227,6 @@ const { getAllUpcomingFixtures } = require("./fixtures.service");
     throw new CustomError(error.message || "Failed to fetch and update odds for upcoming fixtures", 500);
   }
 };
-
 
 
 

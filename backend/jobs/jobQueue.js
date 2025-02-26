@@ -3,7 +3,9 @@ const redis = require("../config/redis");
 const CustomError = require("../utils/customError");
 
 // Create a job queue
-const jobQueue = new Queue("delayedJobsQueue", { connection: redis });
+const soccerQueue = new Queue("soccerJobQueue", { connection: redis });
+const americanFootballQueue = new Queue("americanFootballJobQueue", { connection: redis });
+
 
 /**
  * Add a job to the queue after removing any existing job with the same name.
@@ -11,10 +13,10 @@ const jobQueue = new Queue("delayedJobsQueue", { connection: redis });
  * @param {object} payload - Job data
  * @param {number} delay - Delay time in milliseconds
  */
-const addJob = async (jobName, payload, delay) => {
+const addJob = async (queue,jobName, payload, delay) => {
   try {
     // Fetch all existing jobs in "delayed" and "waiting" states
-    const existingJobs = await jobQueue.getJobs(["delayed", "waiting"]);
+    const existingJobs = await queue.getJobs(["delayed", "waiting"]);
 
     // Check if a job with the same name exists and remove it
     for (const job of existingJobs) {
@@ -25,10 +27,11 @@ const addJob = async (jobName, payload, delay) => {
     }
 
     // Add the new job after removing any existing one
-    await jobQueue.add(jobName, payload, { delay });
+    await queue.add(jobName, payload, { delay });
 
     console.log(`✅ Job scheduled: ${jobName} in ${delay / 1000} seconds`);
   } catch (error) {
+    console.log(`❌ Error adding job to queue: ${error.message}`);
     throw new CustomError(error.message || "Error adding job to queue", error.statusCode || 500);
   }
 };
@@ -42,10 +45,10 @@ const addJob = async (jobName, payload, delay) => {
  * @param {object} payload - Job data
  * @param {number} repeatTime - Time interval in milliseconds (e.g., 5 * 60 * 1000 for 5 minutes)
  */
-const scheduleRecurringJob = async (jobName, payload, repeatTime) => {
+const scheduleRecurringJob = async (queue,jobName, payload, repeatTime) => {
   try {
    // Fetch all existing job schedulers
-   const existingSchedulers = await jobQueue.getJobSchedulers();
+   const existingSchedulers = await queue.getJobSchedulers();
  // Check if the job is already scheduled with the same repeat time
  const isAlreadyScheduled = existingSchedulers.some((scheduler) => {
   // Convert scheduler.every to a number for accurate comparison
@@ -61,7 +64,7 @@ const scheduleRecurringJob = async (jobName, payload, repeatTime) => {
     const schedulerId = `${jobName}-scheduler`;
 
     // Upsert the job scheduler
-    await jobQueue.upsertJobScheduler(
+    await queue.upsertJobScheduler(
       schedulerId, // Unique scheduler ID
       { every: repeatTime }, // Repeat interval
       {
@@ -85,4 +88,4 @@ const scheduleRecurringJob = async (jobName, payload, repeatTime) => {
 
 
 
-module.exports = { jobQueue, addJob, scheduleRecurringJob };
+module.exports = { soccerQueue, americanFootballQueue , addJob, scheduleRecurringJob };

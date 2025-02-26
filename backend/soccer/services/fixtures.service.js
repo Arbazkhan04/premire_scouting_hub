@@ -6,6 +6,7 @@ const SocketService = require("../../sockets/socket");
 const moment = require("moment"); // For UTC time handling
 const { removeRecurringJob } = require("../../jobs/jobManager");
 const { getInPlayOdds } = require("./odds.service");
+const { soccerQueue } = require("../../jobs/jobQueue");
 
 const RAPIDAPI_KEY = process.env.SOCCER_API_KEY; // Secure API Key
 
@@ -571,7 +572,7 @@ const processLiveFixturesAndEmit = async () => {
     if (!liveFixtures || liveFixtures.length === 0) {
       console.log("⚠️ No live fixtures available to emit.");
       //remove the recurring job
-      await removeRecurringJob("fetchLiveScores-scheduler");
+      await removeRecurringJob(soccerQueue,"fetchLiveScores-scheduler");
 
       const { scheduleLiveScoreJob } = require("./soccerJobs.service");
 

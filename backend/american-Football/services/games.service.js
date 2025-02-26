@@ -436,6 +436,5 @@ module.exports = {
   getUpcomingGames,
   getCompletedGames,
   fetchLiveGames,
-
   processLiveGames,
 };
