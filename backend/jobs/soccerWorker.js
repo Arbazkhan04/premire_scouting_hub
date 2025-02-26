@@ -3,10 +3,12 @@ const redis = require("../config/redis");
 const axios = require("axios");
 const {processUpcomingFixturesandEmit, processLiveFixturesAndEmit} =require("../soccer/services/fixtures.service");
 const { scheduleLiveScoreRecurringJob } = require("../soccer/services/soccerJobs.service");
+const { removeJobsByName } = require("./jobManager");
+const { soccerQueue } = require("./jobQueue");
 
 // Create a worker to process jobs
-const worker = new Worker(
-  "delayedJobsQueue",
+const soccerWorker = new Worker(
+  "soccerJobQueue",
   async (job) => {
     console.log(`🚀 Executing Job: ${job.name}`);
 
@@ -49,13 +51,23 @@ const worker = new Worker(
 );
 
 // Handle job retries
-worker.on("failed", async (job, err) => {
+soccerWorker.on("failed", async (job, err) => {
   console.error(`❌ Job ${job.name} failed after attempt ${job.attemptsMade}:`, err.message);
 });
 
-// Log when a job completes
-worker.on("completed", (job) => {
+// // Log when a job completes
+// soccerWorker.on("completed", (job) => {
+//   console.log(`✅ Job completed successfully: ${job.name}`);
+// });
+
+
+soccerWorker.on("completed", async (job) => {
   console.log(`✅ Job completed successfully: ${job.name}`);
+
+  if (job.name === "startLiveScorePolling") {
+    console.log("🔄 Job finished! Removing 'startLiveScorePolling'...");
+    await removeJobsByName(soccerQueue, "startLiveScorePolling");
+  }
 });
 
 console.log("✅ Worker started, waiting for jobs...");

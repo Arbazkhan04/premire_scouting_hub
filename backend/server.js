@@ -7,12 +7,14 @@ const compression = require("compression");
 const http = require("http");
 const socketService = require("./sockets/socket");
 const { initJobSchedulers,scheduleLiveScoreJob } = require("./soccer/services/soccerJobs.service");
+const {initAmericanFootballJobSchedulers} = require("./american-Football/services/americanFootballJobs.service");
 const session = require("express-session");
 const passportConfiguration = require("./utils/passportConfiguration");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-require("./jobs/worker")
+require("./jobs/soccerWorker")
+require("./jobs/americanFootballWorker")
 const app = express();
 const server = http.createServer(app);
 
@@ -35,6 +37,7 @@ app.use(compression());
 
 // initialize all recurring jobs when the server starts
 initJobSchedulers();
+initAmericanFootballJobSchedulers()
 //schedule live score polling job
 scheduleLiveScoreJob()
 

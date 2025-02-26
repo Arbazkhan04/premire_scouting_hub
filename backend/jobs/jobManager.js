@@ -1,12 +1,12 @@
-const { jobQueue } = require("./jobQueue");
+const { soccerQueue,americanFootballQueue } = require("./jobQueue");
 const CustomError = require("../utils/customError");
 
 /**
  * Get Job Details
  */
-const getJobById = async (jobId) => {
+const getJobById = async (queue,jobId) => {
   try {
-    const job = await jobQueue.getJob(jobId);
+    const job = await queue.getJob(jobId);
     return job ? job.toJSON() : null;
   } catch (error) {
     throw new CustomError(
@@ -19,9 +19,9 @@ const getJobById = async (jobId) => {
 /**
  * Remove a Job
  */
-const removeJob = async (jobId) => {
+const removeJob = async (queue,jobId) => {
   try {
-    const job = await jobQueue.getJob(jobId);
+    const job = await queue.getJob(jobId);
     if (job) {
       await job.remove();
     } else {
@@ -38,9 +38,9 @@ const removeJob = async (jobId) => {
 /**
  * Retry a Failed Job
  */
-const retryJob = async (jobId) => {
+const retryJob = async (queue,jobId) => {
   try {
-    const job = await jobQueue.getJob(jobId);
+    const job = await queue.getJob(jobId);
     if (job) {
       await job.retry();
     } else {
@@ -58,10 +58,10 @@ const retryJob = async (jobId) => {
  * Remove all jobs with a specific name
  * @param {string} jobName - Name of the job to remove
  */
-const removeJobsByName = async (jobName) => {
+const removeJobsByName = async (queue,jobName) => {
   try {
     // Get all waiting, delayed, and active jobs
-    const jobs = await jobQueue.getJobs(["waiting", "delayed", "active"]);
+    const jobs = await queue.getJobs(["waiting", "delayed", "active"]);
 
     for (const job of jobs) {
       if (job.name === jobName) {
@@ -70,6 +70,8 @@ const removeJobsByName = async (jobName) => {
       }
     }
   } catch (error) {
+    console.log(`❌ Error removing jobs with name "${jobName}"`, error.message);
+
     throw new CustomError(
      error.message || `Error removing jobs with name "${jobName}"`,
       error.statusCode || 500
@@ -81,9 +83,9 @@ const removeJobsByName = async (jobName) => {
  * Remove a Recurring Job
  * @param {string} schedulerId - Unique identifier for the job scheduler
  */
-const removeRecurringJob = async (schedulerId) => {
+const removeRecurringJob = async (queue,schedulerId) => {
   try {
-    const result = await jobQueue.removeJobScheduler(schedulerId);
+    const result = await queue.removeJobScheduler(schedulerId);
     if (result) {
       console.log(`🛑 Recurring job scheduler "${schedulerId}" removed`);
     } else {

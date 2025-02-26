@@ -1,5 +1,5 @@
-const { removeJobsByName } = require("../../jobs/jobManager");
-const { addJob, scheduleRecurringJob } = require("../../jobs/jobQueue");
+const { removeJobsByName, removeRecurringJob } = require("../../jobs/jobManager");
+const { addJob, scheduleRecurringJob, soccerQueue } = require("../../jobs/jobQueue");
 const {
   upcomingFixtures,
   getAllUpcomingFixtures,
@@ -14,10 +14,10 @@ const initJobSchedulers = () => {
   console.log("⏳ Initializing recurring jobs...");
 
   // Schedule the upcoming fixtures job (runs every 24 hours)
-  scheduleRecurringJob("fetchUpcomingFixtures", {}, 24 * 60 * 60 * 1000);
+  scheduleRecurringJob(soccerQueue, "fetchUpcomingFixtures", {}, 24 * 60 * 60 * 1000);
 
   // Schedule the upcoming fixture odds job (runs every 4 hours)
-  scheduleRecurringJob("fetchUpcomingFixtureOdds", {}, 4 * 60 * 60 * 1000);
+  scheduleRecurringJob(soccerQueue,"fetchUpcomingFixtureOdds", {}, 4 * 60 * 60 * 1000);
 
   console.log("✅ All recurring jobs scheduled!");
 };
@@ -27,10 +27,10 @@ const initJobSchedulers = () => {
  */
 const scheduleLiveScoreRecurringJob = async () => {
   console.log("✅ Starting live score job (every 1 minute)...");
-  await scheduleRecurringJob("fetchLiveScores", {}, 60 * 1000);
+  await scheduleRecurringJob(soccerQueue,"fetchLiveScores", {}, 60 * 1000);
 
   //remove job
-  await removeJobsByName("startLiveScorePolling");
+  // await removeJobsByName(soccerQueue,"startLiveScorePolling");
 };
 
 /**
@@ -82,6 +82,9 @@ const scheduleLiveScoreJob = async () => {
       console.log(
         "⚠️ Earliest match is already starting or past, scheduling live job now..."
       );
+      await removeJobsByName(soccerQueue,"startLiveScorePolling");
+      await removeRecurringJob(soccerQueue,"fetchLiveScores-scheduler");
+
       await scheduleLiveScoreRecurringJob();
       return;
     }
@@ -92,12 +95,30 @@ const scheduleLiveScoreJob = async () => {
       } minutes)`
     );
 
+
+
+    await removeJobsByName(soccerQueue,"startLiveScorePolling");
+    await removeRecurringJob(soccerQueue,"fetchLiveScores-scheduler");
+
     // Step 5: Schedule a one-time job that will start live polling when the match begins
-    await addJob("startLiveScorePolling", {}, delayInMs);
+    await addJob(soccerQueue,"startLiveScorePolling", {}, delayInMs);
   } catch (error) {
     console.error("❌ Error scheduling live score job:", error.message);
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 module.exports = {
   initJobSchedulers,
