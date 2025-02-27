@@ -1,19 +1,22 @@
 const { removeJobsByName } = require("../../jobs/jobManager");
-const { addJob, scheduleRecurringJob, americanFootballQueue } = require("../../jobs/jobQueue");
+const { addJob, scheduleRecurringJob, americanFootballQueue, soccerQueue } = require("../../jobs/jobQueue");
 const moment = require("moment");
+const AmericanFootballGame = require("../models/game.model");
+const { fetchAndSaveGames } = require("./games.service");
 
 
 
 /**
  * Initialize all recurring jobs when the server starts.
  */
-const initAmericanFootballJobSchedulers = () => {
+const initAmericanFootballJobSchedulers =async () => {
 
     console.log("⏳ Initializing recurring jobs...");
   
     // Schedule the upcoming fixtures job (runs every 24 hours)
     scheduleRecurringJob(americanFootballQueue,"fetchGames", {}, 24 * 60 * 60 * 1000);
-  
+
+  await fetchGamesJobWorker()
     // // Schedule the upcoming fixture odds job (runs every 4 hours)
     // scheduleRecurringJob("fetchUpcomingFixtureOdds", {}, 4 * 60 * 60 * 1000);
   
@@ -43,6 +46,7 @@ const fetchGamesJobWorker = async () => {
       console.log("⚠️ No upcoming games found. No live score job scheduled.");
       return;
     }
+    
 
     // Step 3: Get current UTC time and match start time
     const nowUtc = moment.utc();
@@ -84,6 +88,54 @@ const scheduleLiveScoreRecurringJob = async () => {
     await removeJobsByName(soccerQueue,"startAmericanFootballLiveScorePolling");
   };
 
+  
+
+
+
+
+
+/**
+ * Get the nearest upcoming game to start.
+ * @returns {Promise<Object|null>} - The earliest upcoming game or null if no games found.
+ */
+const getEarliestUpcomingGame = async () => {
+  try {
+    console.log("🔄 Fetching upcoming games...");
+
+    // Step 1: Fetch all upcoming games where status is "Not Started (NS)"
+    const upcomingGames = await AmericanFootballGame.find({
+      "status.short": "NS",
+    })
+      .sort({ date: 1 }) // Sort by earliest start time
+      .lean(); // Convert to plain objects for performance boost
+
+    if (!upcomingGames.length) {
+      console.log("⚠️ No upcoming games found.");
+      return null;
+    }
+
+    // Step 2: Get the current UTC time
+    const nowUtc = moment.utc();
+
+    // Step 3: Find the nearest game to start
+    const nearestGame = upcomingGames.find((game) =>
+      moment.utc(game.date).isAfter(nowUtc)
+    );
+
+    if (!nearestGame) {
+      console.log("⚠️ No upcoming games found that are ahead of UTC time.");
+      return null;
+    }
+
+    console.log(
+      `✅ Earliest upcoming game found: ${nearestGame.gameId} starting at ${nearestGame.date}`
+    );
+    return nearestGame;
+  } catch (error) {
+    console.error("❌ Error fetching earliest upcoming game:", error.message);
+    throw new CustomError("Failed to fetch earliest upcoming game", 500);
+  }
+};
 
 
 
