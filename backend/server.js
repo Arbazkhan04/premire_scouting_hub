@@ -35,11 +35,40 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(compression());
 
-// initialize all recurring jobs when the server starts
-initJobSchedulers();
-initAmericanFootballJobSchedulers()
-//schedule live score polling job
-scheduleLiveScoreJob()
+// // initialize all recurring jobs when the server starts
+// initJobSchedulers();
+// await initAmericanFootballJobSchedulers()
+// //schedule live score polling job
+// scheduleLiveScoreJob()
+
+
+
+
+
+
+/**
+ * Wrap initialization logic inside an async function
+ * to properly use `await` at the top level
+ */
+(async () => {
+  try {
+    // Initialize all recurring jobs when the server starts
+    console.log("🔄 Initializing scheduled jobs...");
+    initJobSchedulers();
+    await initAmericanFootballJobSchedulers();
+
+    // Schedule live score polling job
+    await scheduleLiveScoreJob();
+
+    console.log("✅ Server startup tasks completed.");
+  } catch (error) {
+    console.error("❌ Error during server initialization:", error.message);
+  }
+})();
+
+
+
+
 
 // User Management Routes
 const userManagementRoutes = require("./routes/authRoutes");
@@ -56,6 +85,7 @@ const americanFootballLeagueManagement = require("./american-Football/routes/lea
 const americanFootballTeamsManagement = require("./american-Football/routes/teams.routes");
 const americanFootballPlayersManagement = require("./american-Football/routes/player.route");
 const americanFootballGamesManagement = require("./american-Football/routes/games.routes");
+const americanFootballOddsManagement = require("./american-Football/routes/odds.routes");
 
 app.use("/api/v1/auth", userManagementRoutes);
 app.use("/api/v1/favourites", favouritesManagementRoutes);
@@ -70,6 +100,7 @@ app.use("/api/v1/american-football/league", americanFootballLeagueManagement);
 app.use("/api/v1/american-football/team", americanFootballTeamsManagement);
 app.use("/api/v1/american-football/player", americanFootballPlayersManagement);
 app.use("/api/v1/american-football/games", americanFootballGamesManagement);
+app.use("/api/v1/american-football/odds", americanFootballOddsManagement);
 
 // Error Handling Middleware
 app.use(errorHandler);

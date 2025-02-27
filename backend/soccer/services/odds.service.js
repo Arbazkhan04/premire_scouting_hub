@@ -1,6 +1,7 @@
 const axios = require("axios");
 const SoccerFixturesOdds = require("../models/odds.model");
 const CustomError = require("../../utils/customError");
+const SocketService= require("../../sockets/socket")
 
 /**
  * Fetch odds by fixtureId from the API
