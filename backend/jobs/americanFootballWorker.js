@@ -4,6 +4,7 @@ const axios = require("axios");
 const {processUpcomingFixturesandEmit, processLiveFixturesAndEmit} =require("../soccer/services/fixtures.service");
 const { scheduleLiveScoreRecurringJob } = require("../american-Football/services/americanFootballJobs.service");
 const { fetchGamesJobWorker } = require("../american-Football/services/americanFootballJobs.service");
+const { processLiveGamesAndEmit, fetchUpcomingGamesAndEmit } = require("../american-Football/services/games.service");
 
 // Create a worker to process jobs
 const soccerWorker = new Worker(
@@ -27,8 +28,14 @@ const soccerWorker = new Worker(
 
         case "fetchAmericanFootballLiveScores":
           console.log("📄 Startred Fetchlive score job started");
-          await processLiveFixturesAndEmit()
+          await processLiveGamesAndEmit()
           break;
+
+          
+          case "processUpcomingGamesandEmit":
+            console.log("📄 Startred Fetchlive score job started");
+            await fetchUpcomingGamesAndEmit()
+            break;
 
         default:
           console.log(`⚠️ Unknown job type: ${job.name}`);
