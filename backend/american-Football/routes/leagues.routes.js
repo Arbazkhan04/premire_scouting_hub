@@ -5,6 +5,7 @@ const {
   getAllLeaguesController,
   getLeagueByIdController,
   updateLeagueTeamsController,
+  getAllLeaguesStandingsController,
 } = require("../controllers/leagues.controller");
 
 const router = express.Router();
@@ -23,5 +24,9 @@ router.get("/getLeague", getLeagueByIdController);
 
 // Route to update league teams (add a team to a league)
 router.put("/:leagueId/update-teams", updateLeagueTeamsController);
+
+
+// Get standings for all leagues
+router.get("/allLeaguesStandings", getAllLeaguesStandingsController);
 
 module.exports = router;

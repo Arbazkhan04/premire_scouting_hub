@@ -2,7 +2,7 @@ const axios = require("axios");
 const AmericanFootballTeam = require("../models/teams.model");
 const AmericanFootballLeague = require("../models/league.model");
 const CustomError = require("../../utils/customError");
-const { updateLeagueTeams } = require("./leagues.service");
+const { updateLeagueTeams, getLatestSeasonForAllLeagues } = require("./leagues.service");
 
 const RAPID_API_KEY = process.env.AMERICAN_FOOTBALL_API_KEY;
 const RAPID_API_HOST = "https://api-american-football.p.rapidapi.com";
@@ -293,6 +293,193 @@ const updateTeamPlayers = async (teamId, season, players) => {
 };
 
 
+
+
+
+
+/**
+ * Fetch all games of a team for a specific league and season.
+ * @param {number} leagueId - The league ID.
+ * @param {number} season - The season year.
+ * @param {number} teamId - The team ID.
+ * @returns {Promise<Array>} - List of games.
+ * @throws {CustomError} - Throws error if request fails.
+ */
+const getAllGamesOfTeamOfSeason = async (leagueId, season, teamId) => {
+  if (!leagueId) throw new CustomError("leagueId parameter is required", 400);
+  if (!season) throw new CustomError("season parameter is required", 400);
+  if (!teamId) throw new CustomError("teamId parameter is required", 400);
+
+  const options = {
+    method: "GET",
+    url: `${RAPID_API_HOST}/games`,
+    params: { league: leagueId, season: season, team: teamId },
+    headers: {
+      "x-rapidapi-key": RAPID_API_KEY,
+      "x-rapidapi-host": "api-american-football.p.rapidapi.com",
+    },
+  };
+
+  try {
+    const response = await axios.request(options);
+
+    if (!response.data || response.data.results === 0) {
+      console.log(`⚠️ No games found for Team ${teamId} in League ${leagueId}, Season ${season}`);
+      return [];
+    }
+
+    console.log(`✅ Retrieved ${response.data.results} games for Team ${teamId}`);
+    return response.data.response;
+  } catch (error) {
+    console.error("❌ Error fetching games from API:", error.message);
+    throw new CustomError("Failed to fetch games from API", 500);
+  }
+};
+
+
+
+
+/**
+ * Generate team statistics summary for a given season.
+ * @param {number} leagueId - The league ID.
+ * @param {number} season - The season year.
+ * @param {number} teamId - The team ID.
+ * @returns {Promise<Object>} - Summary of team's performance.
+ * @throws {CustomError} - Throws error if request fails.
+ */
+const summaryOfTeamStats = async (leagueId, season, teamId) => {
+  if (!leagueId) throw new CustomError("leagueId parameter is required", 400);
+  if (!season) throw new CustomError("season parameter is required", 400);
+  if (!teamId) throw new CustomError("teamId parameter is required", 400);
+
+  try {
+    // Step 1: Get all games of the team for the season
+    const games = await getAllGamesOfTeamOfSeason(leagueId, season, teamId);
+
+    // If no games found, return empty summary
+    if (!games.length) {
+      return {
+        matchesPlayed: 0,
+        wins: 0,
+        losses: 0,
+        form: "",
+        leagueId,
+        leagueName: null,
+        season,
+        teamId,
+        teamName: null,
+      };
+    }
+
+    let matchesPlayed = 0;
+    let wins = 0;
+    let losses = 0;
+    let form = [];
+
+    // Extract league and team details from the first game
+    const leagueName = games[0].league.name;
+    const teamName =
+      games[0].teams.home.id === teamId
+        ? games[0].teams.home.name
+        : games[0].teams.away.name;
+
+    // Step 2: Process each game to determine results
+    games.forEach((game) => {
+      if (!game.scores || !game.scores.home || !game.scores.away) return;
+
+      matchesPlayed++;
+
+      const isHomeTeam = game.teams.home.id === teamId;
+      const teamScore = isHomeTeam
+        ? game.scores.home.total
+        : game.scores.away.total;
+      const opponentScore = isHomeTeam
+        ? game.scores.away.total
+        : game.scores.home.total;
+
+      if (teamScore > opponentScore) {
+        wins++;
+        form.push("W");
+      } else if (teamScore < opponentScore) {
+        losses++;
+        form.push("L");
+      } else {
+        form.push("D");
+      }
+    });
+
+    // Step 3: Construct response object
+    return {
+      matchesPlayed,
+      wins,
+      losses,
+      form: form.join(""), // Convert array to string (e.g., "DWWLDLLWLL")
+      leagueId,
+      leagueName,
+      season,
+      teamId,
+      teamName,
+    };
+  } catch (error) {
+    console.error("Error generating team stats summary:", error.message);
+    throw new CustomError("Failed to generate team stats summary", 500);
+  }
+};
+
+
+
+
+
+/**
+ * Get the stats summary of a team in its latest season.
+ * @param {number} teamId - The team ID.
+ * @returns {Promise<Object>} - Summary of team's latest season performance.
+ * @throws {CustomError} - Throws error if request fails.
+ */
+const getStatsSummaryOfTeam = async (teamId) => {
+  if (!teamId) throw new CustomError("teamId parameter is required", 400);
+
+  try {
+    // Step 1: Get latest season for all leagues
+    const leaguesWithLatestSeasons = await getLatestSeasonForAllLeagues();
+
+    let foundLeague = null;
+    let foundSeason = null;
+
+    // Step 2: Check if the team exists in the latest season of any league
+    for (const league of leaguesWithLatestSeasons) {
+      const latestSeason = league.latestSeason;
+
+      if (!latestSeason) continue; // Skip leagues with no active seasons
+
+      // Find if the team exists in this league's latest season teams array
+      const seasonTeams = league.teams.find((s) => s.season === latestSeason.year);
+
+      if (seasonTeams && seasonTeams.teams.some((team) => team.teamId === Number(teamId))) {
+        foundLeague = league;
+        foundSeason = latestSeason;
+        break; // Stop looping once the team is found
+      }
+    }
+
+    if (!foundLeague || !foundSeason) {
+      throw new CustomError(`Team ID ${teamId} is not found in any active league's latest season`, 404);
+    }
+
+    console.log(`✅ Team found in league: ${foundLeague.name} (ID: ${foundLeague.leagueId}) - Season: ${foundSeason.year}`);
+
+    // Step 3: Fetch the team's stats summary for the found league and season
+    const teamStatsSummary = await summaryOfTeamStats(foundLeague.leagueId, foundSeason.year, teamId);
+
+    return teamStatsSummary;
+  } catch (error) {
+    console.error("Error fetching stats summary of team:", error.message);
+    throw new CustomError("Failed to retrieve stats summary of team", 500);
+  }
+};
+
+
+
   
 
 module.exports = {
@@ -301,5 +488,8 @@ module.exports = {
   fetchAndSaveAllTeamsOfLeague,
   searchTeams,
   getTeamById,
-  updateTeamPlayers 
+  updateTeamPlayers,
+  getAllGamesOfTeamOfSeason,
+  summaryOfTeamStats,
+  getStatsSummaryOfTeam
 };

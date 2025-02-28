@@ -5,6 +5,7 @@ const {
     getAllLeagues,
     getLeagueById,
     updateLeagueTeams,
+    getAllLeaguesStandings,
   } = require("../services/leagues.service");
   
   const CustomError = require("../../utils/customError");
@@ -104,6 +105,25 @@ const {
       next(error instanceof CustomError ? error : new CustomError(error.message, 500));
     }
   };
+
+
+
+
+
+/**
+ * Controller to get standings for all leagues.
+ */
+const getAllLeaguesStandingsController = async (req, res, next) => {
+  try {
+    const standings = await getAllLeaguesStandings()
+
+    responseHandler(res, 200, "Standings retrieved successfully", standings);
+  } catch (error) {
+    console.error("Error in getAllLeaguesStandingsController:", error.message);
+    next(error instanceof CustomError ? error : new CustomError(error.message, 500));
+  }
+};
+
   
   module.exports = {
     fetchLeaguesFromAPIController,
@@ -111,5 +131,6 @@ const {
     getAllLeaguesController,
     getLeagueByIdController,
     updateLeagueTeamsController,
+    getAllLeaguesStandingsController
   };
   

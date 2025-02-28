@@ -214,6 +214,7 @@ const getLatestSeasonForAllLeagues = async () => {
         leagueId: league.leagueId,
         name: league.name,
         latestSeason: latestSeason || null, // Return season object or null if none found
+        teams: league.teams,
       };
     });
 
@@ -221,6 +222,109 @@ const getLatestSeasonForAllLeagues = async () => {
   } catch (error) {
     console.error("Error getting latest seasons for all leagues:", error.message);
     throw new CustomError("Failed to retrieve latest seasons for all leagues", 500);
+  }
+};
+
+
+
+/**
+ * Fetch league standings from the API.
+ * @param {number} leagueId - The league ID.
+ * @param {number} season - The season year.
+ * @returns {Promise<Array>} - List of standings for the league.
+ * @throws {CustomError} - Throws error if request fails.
+ */
+const getLeagueStandings = async (leagueId, season) => {
+  if (!leagueId || !season) {
+    throw new CustomError("League ID and season are required", 400);
+  }
+
+  const options = {
+    method: "GET",
+    url: `${RAPID_API_HOST}/standings`,
+    params: { league: leagueId, season: season },
+    headers: {
+      "x-rapidapi-key": RAPID_API_KEY,
+      "x-rapidapi-host": "api-american-football.p.rapidapi.com",
+    },
+  };
+
+  try {
+    const response = await axios.request(options);
+
+    if (!response.data || response.data.results === 0) {
+      console.log(`No standings found for league ${leagueId} in season ${season}`);
+      return [];
+    }
+
+    return response.data.response; // Returning the fetched standings
+  } catch (error) {
+    console.error("Error fetching league standings from API:", error.message);
+    throw new CustomError("Failed to fetch league standings from API", 500);
+  }
+};
+
+
+
+/**
+ * Fetch and return the top 10 standings for all leagues with their latest season.
+ * @returns {Promise<Array>} - List of standings for each league.
+ * @throws {CustomError} - Throws error if request fails.
+ */
+const getAllLeaguesStandings = async () => {
+  try {
+    console.log("🔄 Fetching latest seasons for all leagues...");
+    const leaguesWithLatestSeasons = await getLatestSeasonForAllLeagues();
+
+    if (!leaguesWithLatestSeasons || leaguesWithLatestSeasons.length === 0) {
+      throw new CustomError("No leagues with valid seasons found", 404);
+    }
+
+    let standingsByLeague = [];
+
+    for (const league of leaguesWithLatestSeasons) {
+      const { leagueId, name, latestSeason } = league;
+
+      if (!latestSeason) {
+        console.log(`⚠️ No latest season found for league: ${name} (ID: ${leagueId}). Skipping.`);
+        standingsByLeague.push({
+          leagueName: name,
+          season: null,
+          standings: [],
+        });
+        continue;
+      }
+
+      console.log(`📌 Fetching standings for league: ${name} (ID: ${leagueId}) - Season: ${latestSeason.year}`);
+
+      // Fetch league standings
+      const standings = await getLeagueStandings(leagueId, latestSeason.year);
+
+      if (!standings.length) {
+        console.log(`❌ No standings found for ${name} in ${latestSeason.year}`);
+        standingsByLeague.push({
+          leagueName: name,
+          season: latestSeason.year,
+          standings: [],
+        });
+        continue;
+      }
+
+      // Return top 10 teams
+      standingsByLeague.push({
+        leagueName: name,
+        season: latestSeason.year,
+        standings: standings.slice(0, 10),
+      });
+
+      console.log(`✅ Standings fetched for ${name} (${latestSeason.year}).`);
+    }
+
+    console.log("✅ All league standings fetched successfully.");
+    return standingsByLeague;
+  } catch (error) {
+    console.error("Error fetching league standings:", error.message);
+    throw new CustomError("Failed to fetch all league standings", 500);
   }
 };
 
@@ -234,5 +338,6 @@ module.exports = {
   getAllLeagues,
   getLeagueById,
   updateLeagueTeams,
-  getLatestSeasonForAllLeagues
+  getLatestSeasonForAllLeagues,
+  getAllLeaguesStandings
 };
