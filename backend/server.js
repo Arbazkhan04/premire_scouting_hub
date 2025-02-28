@@ -114,9 +114,20 @@ app.use("/", (req, res) => {
 // server
 const port = process.env.PORT || 3000;
 
+
+
+const dbOptions = {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 50000, // Wait 50 seconds before failing
+  socketTimeoutMS: 60000, // Increase socket timeout
+  connectTimeoutMS: 60000, // Increase connection timeout
+};
+
+
 const start = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
+    await mongoose.connect(process.env.MONGO_URI,dbOptions);
     console.log(`Connected to ${process.env.NODE_ENV} Database`);
     server.listen(process.env.PORT, () => {
       console.log(`Server is running on port ${process.env.PORT}`);

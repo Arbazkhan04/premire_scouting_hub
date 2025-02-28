@@ -6,6 +6,8 @@ const {
   fetchAndSaveLeagues,
   getLatestSeasonForAllLeagues,
 } = require("./leagues.service");
+const { americanFootballQueue } = require("../../jobs/jobQueue");
+const SocketService = require("../../sockets/socket");
 
 const RAPID_API_KEY = process.env.AMERICAN_FOOTBALL_API_KEY;
 const RAPID_API_HOST = "https://api-american-football.p.rapidapi.com";
@@ -371,7 +373,7 @@ const processLiveGames = async () => {
     console.log("🔄 Fetching latest seasons for all leagues...");
     const leaguesWithLatestSeasons = await getLatestSeasonForAllLeagues();
 
-    let liveGamesByLeague = {};
+    let liveGamesByLeague = [];
 
     for (const league of leaguesWithLatestSeasons) {
       const { leagueId, name, latestSeason } = league;
@@ -381,11 +383,11 @@ const processLiveGames = async () => {
         console.log(
           `⚠️ League ${name} (ID: ${leagueId}) is not in progress. Skipping.`
         );
-        liveGamesByLeague[leagueId] = {
+        liveGamesByLeague.push({
           leagueName: name,
           season: latestSeason ? latestSeason.year : null,
           liveGames: [], // No live games if season is not current
-        };
+        });
         continue;
       }
 
@@ -399,11 +401,11 @@ const processLiveGames = async () => {
         console.log(
           `❌ No live games found for ${name} in season ${latestSeason.year}`
         );
-        liveGamesByLeague[leagueId] = {
+        liveGamesByLeague.push({
           leagueName: name,
           season: latestSeason.year,
           liveGames: [],
-        };
+        });
         continue;
       }
 
@@ -429,6 +431,126 @@ const processLiveGames = async () => {
   }
 };
 
+/**
+ * Process live games, update them in the database, and emit the results to all connected clients.
+ *
+ * This method performs the following steps:
+ * 1. Calls `processLiveGames()` to fetch live game data, update them in the database.
+ * 2. Retrieves the latest live games from the database.
+ * 3. Emits the updated live games using `SocketService.emitToAll()`.
+ *
+ * If no live games are found, an empty array is returned.
+ * If emitting fails, an error is logged but does not stop the process.
+ *
+ * @throws {CustomError} - Throws an error if updating or emitting fails.
+ */
+const processLiveGamesAndEmit = async () => {
+  try {
+    console.log("🔄 Processing live games and preparing for broadcast...");
+
+    // Step 1: Process and update live games
+    const liveGames = await processLiveGames();
+
+    if (!liveGames || Object.keys(liveGames).length === 0) {
+      console.log("⚠️ No live games available to emit.");
+      // Remove the recurring job if no live games are found
+      await removeRecurringJob(
+        americanFootballQueue,
+        "fetchAmericanFootballLiveScores-scheduler"
+      );
+      const { fetchGamesJobWorker } = require("./americanFootballJobs.service");
+
+      await fetchGamesJobWorker();
+      return [];
+    }
+
+    console.log(
+      `📢 Broadcasting ${
+        Object.keys(liveGames).length
+      } leagues with live games to all clients...`
+    );
+
+    // Step 2: Emit the live games using WebSockets
+    const response = {
+      success: true,
+      message: "Live games processed successfully",
+      data: liveGames,
+    };
+
+    SocketService.emitToAll("americanFootballLiveGames", response, (ack) => {
+      console.log("✅ Acknowledgment received from clients:", ack);
+    });
+
+    console.log("Live games broadcasted:", liveGames);
+    return liveGames;
+  } catch (error) {
+    console.error(
+      "❌ Error processing and emitting live games:",
+      error.message
+    );
+    throw new CustomError(
+      error.message || "Failed to process and emit live games",
+      500
+    );
+  }
+};
+
+/**
+ * Fetch upcoming games for all leagues and emit the results to all connected clients.
+ *
+ * This method performs the following steps:
+ * 1. Calls `getUpcomingGames()` to fetch upcoming game data from the database.
+ * 2. Emits the upcoming games using `SocketService.emitToAll()`.
+ *
+ * If no upcoming games are found, it simply returns an empty response.
+ *
+ * @throws {CustomError} - Throws an error if fetching or emitting fails.
+ */
+const fetchUpcomingGamesAndEmit = async () => {
+  try {
+    console.log("🔄 Fetching upcoming games and preparing for broadcast...");
+
+    // Step 1: Fetch upcoming games
+    const upcomingGames = await getUpcomingGames();
+
+    // Step 2: Check if there are upcoming games
+    if (
+      !upcomingGames ||
+      upcomingGames.every((league) => league.upcomingGames.length === 0)
+    ) {
+      console.log("⚠️ No upcoming games available to emit.");
+      return [];
+    }
+
+    console.log(
+      `📢 Broadcasting upcoming games for ${upcomingGames.length} leagues to all clients...`
+    );
+
+    // Step 3: Emit the upcoming games using WebSockets
+    const response = {
+      success: true,
+      message: "Upcoming games retrieved successfully",
+      data: upcomingGames,
+    };
+
+    SocketService.emitToAll("americanFootballUpcomingGames", response, (ack) => {
+      console.log("✅ Acknowledgment received from clients:", ack);
+    });
+
+    console.log("Upcoming games broadcasted:", upcomingGames);
+    return upcomingGames;
+  } catch (error) {
+    console.error(
+      "❌ Error fetching and emitting upcoming games:",
+      error.message
+    );
+    throw new CustomError(
+      error.message || "Failed to fetch and emit upcoming games",
+      500
+    );
+  }
+};
+
 module.exports = {
   fetchGames,
   insertOrUpdateGames,
@@ -437,4 +559,6 @@ module.exports = {
   getCompletedGames,
   fetchLiveGames,
   processLiveGames,
+  processLiveGamesAndEmit,
+  fetchUpcomingGamesAndEmit,
 };

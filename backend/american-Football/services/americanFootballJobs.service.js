@@ -1,4 +1,4 @@
-const { removeJobsByName } = require("../../jobs/jobManager");
+const { removeJobsByName, removeRecurringJob } = require("../../jobs/jobManager");
 const { addJob, scheduleRecurringJob, americanFootballQueue, soccerQueue } = require("../../jobs/jobQueue");
 const moment = require("moment");
 const AmericanFootballGame = require("../models/game.model");
@@ -15,6 +15,8 @@ const initAmericanFootballJobSchedulers =async () => {
   
     // Schedule the upcoming fixtures job (runs every 24 hours)
     scheduleRecurringJob(americanFootballQueue,"fetchGames", {}, 24 * 60 * 60 * 1000);
+    // Schedule to get upcoming games and emit through socket every 3 hours
+    scheduleRecurringJob(americanFootballQueue,"processUpcomingGamesandEmit", {}, 3 * 60 * 60 * 1000);
 
   await fetchGamesJobWorker()
     // // Schedule the upcoming fixture odds job (runs every 4 hours)
@@ -85,7 +87,7 @@ const scheduleLiveScoreRecurringJob = async () => {
     await scheduleRecurringJob(americanFootballQueue,"fetchAmericanFootballLiveScores", {}, 60 * 1000);
   
     //remove job
-    await removeJobsByName(soccerQueue,"startAmericanFootballLiveScorePolling");
+    await removeJobsByName(americanFootballQueue,"startAmericanFootballLiveScorePolling");
   };
 
   
@@ -139,4 +141,4 @@ const getEarliestUpcomingGame = async () => {
 
 
 
-module.exports = { initAmericanFootballJobSchedulers, fetchGamesJobWorker };
+module.exports = { initAmericanFootballJobSchedulers, fetchGamesJobWorker,scheduleLiveScoreRecurringJob };
