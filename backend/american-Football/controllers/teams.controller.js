@@ -2,6 +2,7 @@ const {
     fetchAndSaveAllTeamsOfLeague,
     searchTeams,
     getTeamById,
+    getStatsSummaryOfTeam,
   } = require("../services/teams.service");
   
   const CustomError = require("../../utils/customError");
@@ -65,9 +66,36 @@ const {
     }
   };
   
+
+
+
+  /**
+ * Controller to fetch the stats summary of a team in its latest season.
+ */
+const getStatsSummaryOfTeamController = async (req, res, next) => {
+  try {
+    const { teamId } = req.query;
+
+    if (!teamId) {
+      throw new CustomError("teamId is required", 400);
+    }
+
+    const teamStatsSummary = await getStatsSummaryOfTeam(teamId);
+
+    responseHandler(res, 200, "Team stats summary retrieved successfully", teamStatsSummary);
+  } catch (error) {
+    console.error("❌ Error in getStatsSummaryOfTeamController:", error.message);
+    next(error instanceof CustomError ? error : new CustomError(error.message, 500));
+  }
+};
+
+
+
+
   module.exports = {
     fetchAndSaveAllTeamsOfLeagueController,
     searchTeamsController,
     getTeamByIdController,
+    getStatsSummaryOfTeamController
   };
   

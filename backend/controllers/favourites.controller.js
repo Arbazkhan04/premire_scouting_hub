@@ -5,6 +5,7 @@ const {
   removeTeamFromFavorites,
   getFavourites,
   favouriteHighlights,
+  americanFootbalFavouriteHighlights,
 } = require("../services/favourites.service");
 const CustomError = require("../utils/customError");
 const responseHandler = require("../utils/responseHandler");
@@ -161,8 +162,21 @@ const getFavoriteHighlights = async (req, res, next) => {
     if (!sportName) {
       return responseHandler(res, 400, "SportName are required", null);
     }
+
     // Call the service method to get the favourite highlights
-    const highlights = await favouriteHighlights(userId, sportName);
+
+    let highlights;
+    if(sportName==="soccer"){
+       highlights = await favouriteHighlights(userId, sportName);
+
+    }
+
+    if(sportName==="american-football"){
+     highlights = await americanFootbalFavouriteHighlights(userId)
+
+    }
+
+
     return responseHandler(
       res,
       200,

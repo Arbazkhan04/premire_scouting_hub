@@ -10,6 +10,11 @@ const {
 } = require("../soccer/services/teamStatistics.service");
 const CustomError = require("../utils/customError");
 const AmericanFootballFavorites = require("../american-Football/models/favourites.model");
+const {
+  fetchPlayerStaisiticsByPlayerId,
+} = require("../american-Football/services/playerStatistics.service");
+const { getStatsSummaryOfTeam } = require("../american-Football/services/teams.service");
+const { getAllLeaguesStandings } = require("../american-Football/services/leagues.service");
 
 /**
  * Get the correct model based on the sport name.
@@ -291,8 +296,8 @@ const favouriteHighlights = async (userId, sportName) => {
       // Step 5: Fetch team stats for the sport
       for (let team of sportFavorites.teams) {
         const teamId = team?.teamId;
-        if(!teamId){
-          throw new CustomError("Team Id is missing",404)
+        if (!teamId) {
+          throw new CustomError("Team Id is missing", 404);
         }
         console.log(team.teamRef.seasons);
         // Get the latest season stats for this team
@@ -320,14 +325,12 @@ const favouriteHighlights = async (userId, sportName) => {
           logo: team.teamRef.logo,
           statsSummary: organizedStats,
         });
-
-     
       }
 
-         //leagueStats (standings and top scorer)
-         const getAllLeagueStandings = await getFilteredLeagueStandings();
+      //leagueStats (standings and top scorer)
+      const getAllLeagueStandings = await getFilteredLeagueStandings();
 
-         leagueHighlights = getAllLeagueStandings;
+      leagueHighlights = getAllLeagueStandings;
 
       // Return combined highlights
       return {
@@ -396,17 +399,20 @@ const getSoccerFavourites = async (userId) => {
 const getAmericanFootballFavourites = async (userId) => {
   try {
     const favorites = await AmericanFootballFavorites.findOne({ userId })
-    .populate("favourites.players.playerRef", "group image name number position") // ✅ Populate favorite players
-    .populate({
-      path: "favourites.teams.teamRef",
-      select: "name code country logo players", // ✅ Select only necessary fields
-      populate: {
-        path: "players.roster.playerRefId", // ✅ Deep populate nested roster array
-        model: "AmericanFootballPlayer", // ✅ Ensure correct reference model
-        select: "group image name number position", // ✅ Select only required fields
-      },
-    });
-  
+      .populate(
+        "favourites.players.playerRef",
+        "group image name number position"
+      ) // ✅ Populate favorite players
+      .populate({
+        path: "favourites.teams.teamRef",
+        select: "name code country logo players", // ✅ Select only necessary fields
+        populate: {
+          path: "players.roster.playerRefId", // ✅ Deep populate nested roster array
+          model: "AmericanFootballPlayer", // ✅ Ensure correct reference model
+          select: "group image name number position", // ✅ Select only required fields
+        },
+      });
+
     if (!favorites) {
       throw new CustomError(
         "No American Football favorites found for this user",
@@ -414,10 +420,10 @@ const getAmericanFootballFavourites = async (userId) => {
       );
     }
 
-    console.log(
-      "American Football Favorites:",
-      JSON.stringify(favorites, null, 2)
-    );
+    // console.log(
+    //   "American Football Favorites:",
+    //   JSON.stringify(favorites, null, 2)
+    // );
 
     return favorites;
   } catch (error) {
@@ -454,6 +460,86 @@ const getFavourites = async (userId, sportName) => {
   }
 };
 
+const americanFootbalFavouriteHighlights = async (userId) => {
+  try {
+    //get favourites by userId
+    const userFavourites = await getAmericanFootballFavourites(userId);
+
+    console.log(
+      "American Football Favorites:",
+      JSON.stringify(userFavourites, null, 2)
+    );
+
+    if (!userFavourites) {
+      throw new CustomError("No favorites found for the user", 404);
+    }
+
+    const favourites = userFavourites.favourites[0];
+
+    //prepare results for players and teams
+
+    const playerHighlights = [];
+    const teamHighlights = [];
+
+    for (let player of favourites.players) {
+      //get stats for each player in favourite list
+      const playerId = player.playerId;
+
+      const playerStats = await fetchPlayerStaisiticsByPlayerId(playerId);
+
+      if (!playerStats) {
+        playerHighlights.push({
+          playerId: playerId,
+          playerName: player.playerRef.name,
+          photo: player.playerRef.image,
+          position: player.playerRef.position,
+          statsSummary: null,
+        });
+        continue;
+      }
+
+      playerHighlights.push({
+        playerId: playerId,
+        playerName: player.playerRef.name,
+        photo: player.playerRef.image,
+        position: player.playerRef.position,
+        statsSummary: playerStats,
+      });
+    }
+
+    //get stats for each team in favourite list
+
+    for(let team of favourites.teams){
+      const teamId = team.teamId;
+      const teamStatsSummary = await getStatsSummaryOfTeam(teamId);
+      
+      teamHighlights.push(teamStatsSummary);
+    }
+
+
+    //get stats for all leagues
+    const leagueHighlights = [];
+    const leagueStats = await getAllLeaguesStandings()
+    
+
+
+
+      // Return combined highlights
+      return {
+        players: playerHighlights,
+        teams: teamHighlights,
+        leagues: leagueStats
+      };
+
+
+  } catch (error) {
+    throw new CustomError(
+      error.message || "Error fetching favorites",
+      error.statusCode || 500
+    );
+  }
+};
+
 module.exports = {
   addPlayerToFavorites,
   removePlayerFromFavorites,
@@ -463,4 +549,5 @@ module.exports = {
   getAmericanFootballFavourites,
   getFavourites,
   favouriteHighlights,
+  americanFootbalFavouriteHighlights,
 };

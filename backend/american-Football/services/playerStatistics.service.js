@@ -25,7 +25,10 @@ const fetchPlayerStatistics = async (playerId, season) => {
     );
 
     if (!response || response.results === 0) {
-      throw new CustomError("No statistics found for the given player and season", 404);
+      throw new CustomError(
+        "No statistics found for the given player and season",
+        404
+      );
     }
 
     return response.response;
@@ -86,7 +89,6 @@ const updatePlayerStatisticsReference = async (statsData) => {
   }
 };
 
-
 /**
  * Fetch and save all statistics of given players for a season (Parallel Execution).
  * @param {Array} playerIds - Array of player IDs.
@@ -94,55 +96,61 @@ const updatePlayerStatisticsReference = async (statsData) => {
  * @returns {Promise<Array>} - Saved player statistics.
  */
 const fetchAndSaveAllPlayerStatistics = async (playerIds, season) => {
-    if (!Array.isArray(playerIds) || playerIds.length === 0) {
-      throw new CustomError("playerIds parameter must be a non-empty array", 400);
-    }
-    if (!season) throw new CustomError("season parameter is required", 400);
-  
-    try {
-      console.log(`Fetching stats for ${playerIds.length} players in parallel...`);
-  
-      // Parallel API calls using Promise.all()
-      const statsResponses = await Promise.all(
-        playerIds.map((playerId) =>
-          fetchPlayerStatistics(playerId, season).catch((error) => {
-            console.warn(`Failed to fetch stats for player ${playerId}: ${error.message}`);
-            return null; // Continue processing other players
-          })
-        )
+  if (!Array.isArray(playerIds) || playerIds.length === 0) {
+    throw new CustomError("playerIds parameter must be a non-empty array", 400);
+  }
+  if (!season) throw new CustomError("season parameter is required", 400);
+
+  try {
+    console.log(
+      `Fetching stats for ${playerIds.length} players in parallel...`
+    );
+
+    // Parallel API calls using Promise.all()
+    const statsResponses = await Promise.all(
+      playerIds.map((playerId) =>
+        fetchPlayerStatistics(playerId, season).catch((error) => {
+          console.warn(
+            `Failed to fetch stats for player ${playerId}: ${error.message}`
+          );
+          return null; // Continue processing other players
+        })
+      )
+    );
+
+    // Process API responses
+    const allStats = statsResponses
+      .filter((stats) => stats && stats.length > 0)
+      .flatMap((stats) =>
+        stats.map((stat) => ({
+          playerId: stat.player.id,
+          season,
+          teamId: stat.teams[0]?.team.id,
+          teamName: stat.teams[0]?.team.name,
+          teamLogo: stat.teams[0]?.team.logo,
+          statistics: stat.teams[0]?.groups.map((group) => ({
+            category: group.name,
+            stats: group.statistics,
+          })),
+        }))
       );
-  
-      // Process API responses
-      const allStats = statsResponses
-        .filter((stats) => stats && stats.length > 0)
-        .flatMap((stats) =>
-          stats.map((stat) => ({
-            playerId: stat.player.id,
-            season,
-            teamId: stat.teams[0]?.team.id,
-            teamName: stat.teams[0]?.team.name,
-            teamLogo: stat.teams[0]?.team.logo,
-            statistics: stat.teams[0]?.groups.map((group) => ({
-              category: group.name,
-              stats: group.statistics,
-            })),
-          }))
-        );
-  
-      // Save stats in bulk
-      if (allStats.length > 0) {
-        const savedStats = await savePlayerStatistics(allStats);
-        await updatePlayerStatisticsReference(savedStats);
-        return savedStats;
-      }
-  
-      return [];
-    } catch (error) {
-      console.error("Error fetching and saving all player statistics:", error.message);
-      throw new CustomError("Failed to fetch and save player statistics", 500);
+
+    // Save stats in bulk
+    if (allStats.length > 0) {
+      const savedStats = await savePlayerStatistics(allStats);
+      await updatePlayerStatisticsReference(savedStats);
+      return savedStats;
     }
-  };
-  
+
+    return [];
+  } catch (error) {
+    console.error(
+      "Error fetching and saving all player statistics:",
+      error.message
+    );
+    throw new CustomError("Failed to fetch and save player statistics", 500);
+  }
+};
 
 /**
  * Fetch and save all player statistics of all teams for a given season.
@@ -162,15 +170,21 @@ const fetchAndSaveAllTeamPlayerStatistics = async (season) => {
 
     // Collect all team player IDs for the given season
     const teamPlayerRequests = teams.map(async (team) => {
-      const seasonData = team.players.find((entry) => entry.season ===Number(season));
+      const seasonData = team.players.find(
+        (entry) => entry.season === Number(season)
+      );
 
       if (!seasonData || !seasonData.roster) {
-        console.warn(`No players found for team ID: ${team.teamId} in season ${season}`);
+        console.warn(
+          `No players found for team ID: ${team.teamId} in season ${season}`
+        );
         return [];
       }
 
       const playerIds = seasonData.roster.map((player) => player.playerId);
-      console.log(`Fetching stats for team ID: ${team.teamId}, players: ${playerIds.length}`);
+      console.log(
+        `Fetching stats for team ID: ${team.teamId}, players: ${playerIds.length}`
+      );
 
       return fetchAndSaveAllPlayerStatistics(playerIds, season);
     });
@@ -181,11 +195,32 @@ const fetchAndSaveAllTeamPlayerStatistics = async (season) => {
     // Flatten the results since `Promise.all()` returns an array of arrays
     return allTeamPlayerStats.flat();
   } catch (error) {
-    console.error("Error fetching and saving all team player statistics:", error.message);
-    throw new CustomError("Failed to fetch and save all team player statistics", 500);
+    console.error(
+      "Error fetching and saving all team player statistics:",
+      error.message
+    );
+    throw new CustomError(
+      "Failed to fetch and save all team player statistics",
+      500
+    );
   }
 };
 
+const fetchPlayerStaisiticsByPlayerId = async (playerId) => {
+  try {
+    const playerStats = await AmericanFootballPlayerStatistics.findOne({
+      playerId: playerId,
+    });
+
+    if (!playerStats) {
+      return null;
+      // throw new CustomError("No player statistics found",404);
+    }
+    return playerStats;
+  } catch (error) {
+    throw new CustomError("Failed to fetch player statistics", 500);
+  }
+};
 
 module.exports = {
   fetchPlayerStatistics,
@@ -193,4 +228,5 @@ module.exports = {
   updatePlayerStatisticsReference,
   fetchAndSaveAllPlayerStatistics,
   fetchAndSaveAllTeamPlayerStatistics,
+  fetchPlayerStaisiticsByPlayerId
 };

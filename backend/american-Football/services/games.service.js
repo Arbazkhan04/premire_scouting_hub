@@ -8,6 +8,7 @@ const {
 } = require("./leagues.service");
 const { americanFootballQueue } = require("../../jobs/jobQueue");
 const SocketService = require("../../sockets/socket");
+const { removeRecurringJob } = require("../../jobs/jobManager");
 
 const RAPID_API_KEY = process.env.AMERICAN_FOOTBALL_API_KEY;
 const RAPID_API_HOST = "https://api-american-football.p.rapidapi.com";
@@ -448,16 +449,24 @@ const processLiveGamesAndEmit = async () => {
   try {
     console.log("🔄 Processing live games and preparing for broadcast...");
 
+    const anyLiveGame=false;
     // Step 1: Process and update live games
     const liveGames = await processLiveGames();
+    for (const game of liveGames) {
+      if(game.liveGames.length >0){
+        anyLiveGame=true
+      }
 
-    if (!liveGames || Object.keys(liveGames).length === 0) {
+    }
+
+    if (!anyLiveGame) {
       console.log("⚠️ No live games available to emit.");
       // Remove the recurring job if no live games are found
       await removeRecurringJob(
         americanFootballQueue,
         "fetchAmericanFootballLiveScores-scheduler"
       );
+      
       const { fetchGamesJobWorker } = require("./americanFootballJobs.service");
 
       await fetchGamesJobWorker();
