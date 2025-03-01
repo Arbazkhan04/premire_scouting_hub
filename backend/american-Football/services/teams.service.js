@@ -544,7 +544,7 @@ const getStatsSummaryOfTeam = async (teamId) => {
     return teamStatsSummary;
   } catch (error) {
     console.error("Error fetching stats summary of team:", error.message);
-    throw new CustomError("Failed to retrieve stats summary of team", 500);
+    throw new CustomError(error.message || "Failed to retrieve stats summary of team", 500);
   }
 };
 
