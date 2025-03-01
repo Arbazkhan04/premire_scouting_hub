@@ -258,16 +258,40 @@ const processUpcomingFixturesOddsAndEmit = async () => {
 
     console.log(`📢 Broadcasting odds for ${updatedOdds.length} fixtures to all clients...`);
 
-    // Step 2: Emit the updated odds data using WebSockets
-    const response = {
-      success: true,
-      message: "Upcoming fixture odds processed successfully",
-      data: updatedOdds,
-    };
 
-    SocketService.emitToAll("soccerupcomingFixtureOdds", response, (ack) => {
-      console.log("✅ Acknowledgment received from clients:", ack);
-    });
+    //emit event seperately for all the fixtues
+
+    const fixtureIds=updatedOdds.map((odds)=>odds.fixture.id);
+
+    fixtureIds.forEach(async (fixtureId)=>{
+
+      const oddsData=updatedOdds.find((odds)=>odds.fixture.id===fixtureId);
+
+      const response = {
+        success: true,
+        message: "Upcoming fixture odds processed successfully",
+        data: oddsData,
+      };
+  
+      SocketService.emitToAll(`fixtureOdds:${fixtureId}`, response, (ack) => {
+        console.log("✅ Acknowledgment received from clients:", ack);
+      });
+    })
+
+
+
+
+
+    // // Step 2: Emit the updated odds data using WebSockets
+    // const response = {
+    //   success: true,
+    //   message: "Upcoming fixture odds processed successfully",
+    //   data: updatedOdds,
+    // };
+
+    // SocketService.emitToAll("soccerupcomingFixtureOdds", response, (ack) => {
+    //   console.log("✅ Acknowledgment received from clients:", ack);
+    // });
 
     return updatedOdds;
   } catch (error) {
@@ -318,6 +342,38 @@ const getInPlayOdds = async (fixtureId) => {
 
 
 
+/**
+ * Get fixture odds by fixture ID from the database.
+ * @param {number} fixtureId - The fixture ID.
+ * @returns {Promise<Object>} - Returns the odds data for the fixture.
+ * @throws {CustomError} - Throws error if no odds are found or if query fails.
+ */
+const getFixtureOddsByFixtureIdFromDB = async (fixtureId) => {
+  if (!fixtureId) {
+    throw new CustomError("Fixture ID is required", 400);
+  }
+
+  try {
+    console.log(`🔍 Fetching fixture odds for fixture ID: ${fixtureId} from DB...`);
+
+    // Fetch the odds from the database
+    const odds = await SoccerFixturesOdds.findOne({ fixtureId }).lean();
+
+    if (!odds) {
+      throw new CustomError(`No odds found for fixture ID: ${fixtureId}`, 404);
+    }
+
+    console.log("✅ Fixture odds found:", odds);
+    return odds;
+  } catch (error) {
+    console.error(`❌ Error fetching fixture odds by fixture ID ${fixtureId}:`, error.message);
+    throw new CustomError(error.message || "Failed to fetch fixture odds by fixture ID", 500);
+  }
+};
+
+
+
+
 
 
 module.exports = {
@@ -325,7 +381,9 @@ module.exports = {
   insertOrUpdateOdds,
   fetchUpcomingFixtureOdds,
   processUpcomingFixturesOddsAndEmit,
-  getInPlayOdds
+  getInPlayOdds,
+  getFixtureOddsByFixtureIdFromDB,
+
 };
 
 

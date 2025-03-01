@@ -1,6 +1,7 @@
 const { getOddsByGameId, getOddsofAllUpcomingGames } = require("../services/odds.service");
 const CustomError = require("../../utils/customError");
 const responseHandler = require("../../utils/responseHandler");
+const { getFixtureOddsByFixtureIdFromDB } = require("../../soccer/services/odds.service");
 
 /**
  * Controller to get odds for a specific game.
@@ -58,7 +59,29 @@ const getOddsForUpcomingGamesController = async (req, res, next) => {
     }
   };
 
+
+  /**
+ * Controller to get fixture odds from the database by fixture ID.
+ */
+const getFixtureOddsByFixtureIdController = async (req, res, next) => {
+  try {
+    const {fixtureId} = req.query; // Convert to number
+    if (!fixtureId)  {
+      throw new CustomError("fixture Id required", 400);
+    }
+
+    const fixtureOdds = await getFixtureOddsByFixtureIdFromDB(fixtureId);
+    
+    responseHandler(res, 200, "Fixture odds retrieved successfully", fixtureOdds);
+  } catch (error) {
+    console.error("❌ Error in getFixtureOddsByFixtureIdController:", error.message);
+    next(error instanceof CustomError ? error : new CustomError(error.message, 500));
+  }
+};
+
+
 module.exports = {
   getOddsByGameIdController,
-  getOddsForUpcomingGamesController
+  getOddsForUpcomingGamesController,
+  getFixtureOddsByFixtureIdController
 };
