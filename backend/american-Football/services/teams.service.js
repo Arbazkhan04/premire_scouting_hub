@@ -2,7 +2,10 @@ const axios = require("axios");
 const AmericanFootballTeam = require("../models/teams.model");
 const AmericanFootballLeague = require("../models/league.model");
 const CustomError = require("../../utils/customError");
-const { updateLeagueTeams, getLatestSeasonForAllLeagues } = require("./leagues.service");
+const {
+  updateLeagueTeams,
+  getLatestSeasonForAllLeagues,
+} = require("./leagues.service");
 
 const RAPID_API_KEY = process.env.AMERICAN_FOOTBALL_API_KEY;
 const RAPID_API_HOST = "https://api-american-football.p.rapidapi.com";
@@ -31,7 +34,10 @@ const getAllTeamsOfLeague = async (leagueId, season) => {
   try {
     const response = await axios.request(options);
     if (!response.data || response.data.results === 0) {
-      throw new CustomError("No teams found for the given league and season", 404);
+      throw new CustomError(
+        "No teams found for the given league and season",
+        404
+      );
     }
     return response.data.response;
   } catch (error) {
@@ -58,7 +64,7 @@ const getAllTeamsOfLeague = async (leagueId, season) => {
 //     if (!season) {
 //       throw new CustomError("season parameter is required", 400);
 //     }
-  
+
 //     try {
 //       // Save or update team in the database
 //       const savedTeam = await AmericanFootballTeam.findOneAndUpdate(
@@ -79,18 +85,16 @@ const getAllTeamsOfLeague = async (leagueId, season) => {
 //         },
 //         { upsert: true, new: true, setDefaultsOnInsert: true }
 //       );
-  
+
 //       // Update the League's teams array by season
 //       await updateLeagueTeams(leagueId, season, { _id: savedTeam._id, teamId: savedTeam.teamId });
-  
+
 //       return savedTeam;
 //     } catch (error) {
 //       console.error("Error saving team to DB:", error.message);
 //       throw new CustomError("Failed to save team to database", 500);
 //     }
 //   };
-  
-
 
 /**
  * Save multiple teams to the database and update the corresponding league.
@@ -102,64 +106,61 @@ const getAllTeamsOfLeague = async (leagueId, season) => {
  */
 const saveTeamsToDB = async (teamsData, leagueId, season) => {
   if (!Array.isArray(teamsData) || teamsData.length === 0) {
-      throw new CustomError("Valid teams data array is required", 400);
+    throw new CustomError("Valid teams data array is required", 400);
   }
   if (!leagueId) {
-      throw new CustomError("leagueId parameter is required", 400);
+    throw new CustomError("leagueId parameter is required", 400);
   }
   if (!season) {
-      throw new CustomError("season parameter is required", 400);
+    throw new CustomError("season parameter is required", 400);
   }
 
   try {
-      // Prepare bulk operations
-      const bulkOps = teamsData.map(teamData => ({
-          updateOne: {
-              filter: { teamId: teamData.id },
-              update: {
-                  $set: {
-                      teamId: teamData.id,
-                      name: teamData.name,
-                      code: teamData.code,
-                      city: teamData.city,
-                      coach: teamData.coach,
-                      owner: teamData.owner,
-                      stadium: teamData.stadium,
-                      established: teamData.established,
-                      logo: teamData.logo,
-                      country: teamData.country,
-                  },
-              },
-              upsert: true, // Insert if not found
-          }
-      }));
+    // Prepare bulk operations
+    const bulkOps = teamsData.map((teamData) => ({
+      updateOne: {
+        filter: { teamId: teamData.id },
+        update: {
+          $set: {
+            teamId: teamData.id,
+            name: teamData.name,
+            code: teamData.code,
+            city: teamData.city,
+            coach: teamData.coach,
+            owner: teamData.owner,
+            stadium: teamData.stadium,
+            established: teamData.established,
+            logo: teamData.logo,
+            country: teamData.country,
+          },
+        },
+        upsert: true, // Insert if not found
+      },
+    }));
 
-      // Execute bulk write operation
-      const result = await AmericanFootballTeam.bulkWrite(bulkOps, { ordered: false });
+    // Execute bulk write operation
+    const result = await AmericanFootballTeam.bulkWrite(bulkOps, {
+      ordered: false,
+    });
 
-      // Fetch saved teams (optional but useful)
-      const savedTeams = await AmericanFootballTeam.find({ teamId: { $in: teamsData.map(t => t.id) } });
+    // Fetch saved teams (optional but useful)
+    const savedTeams = await AmericanFootballTeam.find({
+      teamId: { $in: teamsData.map((t) => t.id) },
+    });
 
-      // Update the League's teams array in one operation
-      await updateLeagueTeams(
-          leagueId,
-          season,
-          savedTeams.map(team => ({ _id: team._id, teamId: team.teamId }))
-      );
+    // Update the League's teams array in one operation
+    await updateLeagueTeams(
+      leagueId,
+      season,
+      savedTeams.map((team) => ({ _id: team._id, teamId: team.teamId }))
+    );
 
-      return savedTeams;
+    return savedTeams;
   } catch (error) {
-      console.error("Error saving teams to DB:", error.message);
-      throw new CustomError("Failed to save teams to database", 500);
+    console.error("Error saving teams to DB:", error.message);
+    throw new CustomError("Failed to save teams to database", 500);
   }
 };
-
-
-
-
-
-
-
 
 /**
  * Fetch and save all teams of a league for a given season.
@@ -169,30 +170,30 @@ const saveTeamsToDB = async (teamsData, leagueId, season) => {
  * @throws {CustomError} - Throws error if process fails.
  */
 const fetchAndSaveAllTeamsOfLeague = async (leagueId, season) => {
-    if (!leagueId) {
-      throw new CustomError("leagueId parameter is required", 400);
-    }
-    if (!season) {
-      throw new CustomError("season parameter is required", 400);
-    }
-  
-    try {
-      const teams = await getAllTeamsOfLeague(leagueId, season);
-      const savedTeams = await saveTeamsToDB(teams,leagueId,season)
-  
-      // for (const team of teams) {
-      //   console.log(`Saving team: ${team.name} for season ${season}`);
-      //   const savedTeam = await saveTeamToDB(team, leagueId, season);
-      //   savedTeams.push(savedTeam);
-      // }
-  
-      return savedTeams;
-    } catch (error) {
-      console.error("Error fetching and saving teams:", error.message);
-      throw new CustomError("Failed to process and save teams", 500);
-    }
-  };
-  
+  if (!leagueId) {
+    throw new CustomError("leagueId parameter is required", 400);
+  }
+  if (!season) {
+    throw new CustomError("season parameter is required", 400);
+  }
+
+  try {
+    const teams = await getAllTeamsOfLeague(leagueId, season);
+    const savedTeams = await saveTeamsToDB(teams, leagueId, season);
+
+    // for (const team of teams) {
+    //   console.log(`Saving team: ${team.name} for season ${season}`);
+    //   const savedTeam = await saveTeamToDB(team, leagueId, season);
+    //   savedTeams.push(savedTeam);
+    // }
+
+    return savedTeams;
+  } catch (error) {
+    console.error("Error fetching and saving teams:", error.message);
+    throw new CustomError("Failed to process and save teams", 500);
+  }
+};
+
 /**
  * Search teams by name or partial query.
  * @param {string} query - Search query (partial or full).
@@ -207,7 +208,8 @@ const searchTeams = async (query) => {
       name: { $regex: query, $options: "i" }, // Case-insensitive partial search
     });
 
-    if (!teams.length) throw new CustomError("No teams found for the given search", 404);
+    if (!teams.length)
+      throw new CustomError("No teams found for the given search", 404);
 
     return teams;
   } catch (error) {
@@ -226,12 +228,11 @@ const getTeamById = async (teamId) => {
   if (!teamId) throw new CustomError("teamId parameter is required", 400);
 
   try {
-    const team = await AmericanFootballTeam.findOne({ teamId })
-      .populate({
-        path: "players.roster.playerRefId", // Populate player reference inside roster
-        model: "AmericanFootballPlayer", // Reference to the correct model
-        select: "name position number image group", // Selecting only required fields
-      });
+    const team = await AmericanFootballTeam.findOne({ teamId }).populate({
+      path: "players.roster.playerRefId", // Populate player reference inside roster
+      model: "AmericanFootballPlayer", // Reference to the correct model
+      select: "name position number image group", // Selecting only required fields
+    });
 
     if (!team) throw new CustomError(`No team found with ID: ${teamId}`, 404);
 
@@ -241,8 +242,6 @@ const getTeamById = async (teamId) => {
     throw new CustomError("Failed to retrieve team from database", 500);
   }
 };
-
-
 
 /**
  * Update a team's players list by adding multiple players for a specific season.
@@ -271,12 +270,18 @@ const updateTeamPlayers = async (teamId, season, players) => {
     }
 
     // Find the index of the season
-    const seasonIndex = team.players.findIndex((entry) => entry.season === season);
+    const seasonIndex = team.players.findIndex(
+      (entry) => entry.season === season
+    );
 
     if (seasonIndex !== -1) {
       // If season exists, filter out duplicates before adding
-      const existingPlayerIds = new Set(team.players[seasonIndex].roster.map((p) => p.playerId));
-      const newPlayers = players.filter((p) => !existingPlayerIds.has(p.playerId));
+      const existingPlayerIds = new Set(
+        team.players[seasonIndex].roster.map((p) => p.playerId)
+      );
+      const newPlayers = players.filter(
+        (p) => !existingPlayerIds.has(p.playerId)
+      );
 
       team.players[seasonIndex].roster.push(...newPlayers);
     } else {
@@ -291,11 +296,6 @@ const updateTeamPlayers = async (teamId, season, players) => {
     throw new CustomError("Failed to update team players", 500);
   }
 };
-
-
-
-
-
 
 /**
  * Fetch all games of a team for a specific league and season.
@@ -324,20 +324,21 @@ const getAllGamesOfTeamOfSeason = async (leagueId, season, teamId) => {
     const response = await axios.request(options);
 
     if (!response.data || response.data.results === 0) {
-      console.log(`⚠️ No games found for Team ${teamId} in League ${leagueId}, Season ${season}`);
+      console.log(
+        `⚠️ No games found for Team ${teamId} in League ${leagueId}, Season ${season}`
+      );
       return [];
     }
 
-    console.log(`✅ Retrieved ${response.data.results} games for Team ${teamId}`);
+    console.log(
+      `✅ Retrieved ${response.data.results} games for Team ${teamId}`
+    );
     return response.data.response;
   } catch (error) {
     console.error("❌ Error fetching games from API:", error.message);
     throw new CustomError("Failed to fetch games from API", 500);
   }
 };
-
-
-
 
 /**
  * Generate team statistics summary for a given season.
@@ -426,20 +427,75 @@ const summaryOfTeamStats = async (leagueId, season, teamId) => {
   }
 };
 
+// /**
+//  * Get the stats summary of a team in its latest season.
+//  * @param {number} teamId - The team ID.
+//  * @returns {Promise<Object>} - Summary of team's latest season performance.
+//  * @throws {CustomError} - Throws error if request fails.
+//  */
+// const getStatsSummaryOfTeam = async (teamId) => {
 
+//   if (!teamId) throw new CustomError("teamId parameter is required", 400);
 
+//   try {
+//     // Step 1: Get latest season for all leagues
+//     const leaguesWithLatestSeasons = await getLatestSeasonForAllLeagues();
 
+//     let foundLeague = null;
+//     let foundSeason = null;
+
+//     // Step 2: Check if the team exists in the latest season of any league
+//     for (const league of leaguesWithLatestSeasons) {
+//       const latestSeason = league.latestSeason;
+
+//       if (!latestSeason) continue; // Skip leagues with no active seasons
+
+//       // Find if the team exists in this league's latest season teams array
+//       const seasonTeams = league.teams.find((s) => s.season === latestSeason.year);
+
+//       if (seasonTeams && seasonTeams.teams.some((team) => team.teamId === Number(teamId))) {
+//         foundLeague = league;
+//         foundSeason = latestSeason;
+//         break; // Stop looping once the team is found
+//       }
+//     }
+
+//     if (!foundLeague || !foundSeason) {
+//       throw new CustomError(`Team ID ${teamId} is not found in any active league's latest season`, 404);
+//     }
+
+//     console.log(`✅ Team found in league: ${foundLeague.name} (ID: ${foundLeague.leagueId}) - Season: ${foundSeason.year}`);
+
+//     // Step 3: Fetch the team's stats summary for the found league and season
+//     const teamStatsSummary = await summaryOfTeamStats(foundLeague.leagueId, foundSeason.year, teamId);
+
+//     return teamStatsSummary;
+//   } catch (error) {
+//     console.error("Error fetching stats summary of team:", error.message);
+//     throw new CustomError("Failed to retrieve stats summary of team", 500);
+//   }
+// };
 
 /**
  * Get the stats summary of a team in its latest season.
- * @param {number} teamId - The team ID.
+ * @param {number|string} teamId - The team ID (number or string).
  * @returns {Promise<Object>} - Summary of team's latest season performance.
  * @throws {CustomError} - Throws error if request fails.
  */
 const getStatsSummaryOfTeam = async (teamId) => {
-  if (!teamId) throw new CustomError("teamId parameter is required", 400);
-
   try {
+    if (!teamId) throw new CustomError("teamId parameter is required", 400);
+
+    // Ensure teamId is a number and trim spaces if it's a string
+    const formattedTeamId = Number(String(teamId).trim());
+
+    if (isNaN(formattedTeamId)) {
+      throw new CustomError(
+        "Invalid teamId format. Must be a valid number.",
+        400
+      );
+    }
+
     // Step 1: Get latest season for all leagues
     const leaguesWithLatestSeasons = await getLatestSeasonForAllLeagues();
 
@@ -453,9 +509,14 @@ const getStatsSummaryOfTeam = async (teamId) => {
       if (!latestSeason) continue; // Skip leagues with no active seasons
 
       // Find if the team exists in this league's latest season teams array
-      const seasonTeams = league.teams.find((s) => s.season === latestSeason.year);
+      const seasonTeams = league.teams.find(
+        (s) => s.season === latestSeason.year
+      );
 
-      if (seasonTeams && seasonTeams.teams.some((team) => team.teamId === Number(teamId))) {
+      if (
+        seasonTeams &&
+        seasonTeams.teams.some((team) => team.teamId === formattedTeamId)
+      ) {
         foundLeague = league;
         foundSeason = latestSeason;
         break; // Stop looping once the team is found
@@ -463,13 +524,22 @@ const getStatsSummaryOfTeam = async (teamId) => {
     }
 
     if (!foundLeague || !foundSeason) {
-      throw new CustomError(`Team ID ${teamId} is not found in any active league's latest season`, 404);
+      throw new CustomError(
+        `Team ID ${formattedTeamId} is not found in any active league's latest season`,
+        404
+      );
     }
 
-    console.log(`✅ Team found in league: ${foundLeague.name} (ID: ${foundLeague.leagueId}) - Season: ${foundSeason.year}`);
+    console.log(
+      `✅ Team found in league: ${foundLeague.name} (ID: ${foundLeague.leagueId}) - Season: ${foundSeason.year}`
+    );
 
     // Step 3: Fetch the team's stats summary for the found league and season
-    const teamStatsSummary = await summaryOfTeamStats(foundLeague.leagueId, foundSeason.year, teamId);
+    const teamStatsSummary = await summaryOfTeamStats(
+      foundLeague.leagueId,
+      foundSeason.year,
+      formattedTeamId
+    );
 
     return teamStatsSummary;
   } catch (error) {
@@ -477,10 +547,6 @@ const getStatsSummaryOfTeam = async (teamId) => {
     throw new CustomError("Failed to retrieve stats summary of team", 500);
   }
 };
-
-
-
-  
 
 module.exports = {
   getAllTeamsOfLeague,
@@ -491,5 +557,5 @@ module.exports = {
   updateTeamPlayers,
   getAllGamesOfTeamOfSeason,
   summaryOfTeamStats,
-  getStatsSummaryOfTeam
+  getStatsSummaryOfTeam,
 };
