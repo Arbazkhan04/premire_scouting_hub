@@ -482,12 +482,16 @@ const summaryOfTeamStats = async (leagueId, season, teamId) => {
  * @returns {Promise<Object>} - Summary of team's latest season performance.
  * @throws {CustomError} - Throws error if request fails.
  */
-const getStatsSummaryOfTeam = async (teamId) => {
+const getStatsSummaryOfTeam = async (teamIdparam) => {
   try {
-    if (!teamId) throw new CustomError("teamId parameter is required", 400);
-
-    // // Ensure teamId is a number and trim spaces if it's a string
-    // const formattedTeamId = Number(String(teamId).trim());
+    if (!teamIdparam)
+      throw new CustomError("teamId parameter is required", 400);
+    let teamId = teamIdparam;
+    //if type of id is not a number
+    if (typeof teamId !== "number") {
+      // Ensure teamId is a number and trim spaces if it's a string
+      teamId = Number(String(teamId).trim());
+    }
 
     // if (isNaN(formattedTeamId)) {
     //   throw new CustomError(
@@ -544,7 +548,10 @@ const getStatsSummaryOfTeam = async (teamId) => {
     return teamStatsSummary;
   } catch (error) {
     console.error("Error fetching stats summary of team:", error.message);
-    throw new CustomError(error.message || "Failed to retrieve stats summary of team", 500);
+    throw new CustomError(
+      error.message || "Failed to retrieve stats summary of team",
+      500
+    );
   }
 };
 
