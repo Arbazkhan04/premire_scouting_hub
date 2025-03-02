@@ -486,15 +486,15 @@ const getStatsSummaryOfTeam = async (teamId) => {
   try {
     if (!teamId) throw new CustomError("teamId parameter is required", 400);
 
-    // Ensure teamId is a number and trim spaces if it's a string
-    const formattedTeamId = Number(String(teamId).trim());
+    // // Ensure teamId is a number and trim spaces if it's a string
+    // const formattedTeamId = Number(String(teamId).trim());
 
-    if (isNaN(formattedTeamId)) {
-      throw new CustomError(
-        "Invalid teamId format. Must be a valid number.",
-        400
-      );
-    }
+    // if (isNaN(formattedTeamId)) {
+    //   throw new CustomError(
+    //     "Invalid teamId format. Must be a valid number.",
+    //     400
+    //   );
+    // }
 
     // Step 1: Get latest season for all leagues
     const leaguesWithLatestSeasons = await getLatestSeasonForAllLeagues();
@@ -515,7 +515,7 @@ const getStatsSummaryOfTeam = async (teamId) => {
 
       if (
         seasonTeams &&
-        seasonTeams.teams.some((team) => team.teamId === formattedTeamId)
+        seasonTeams.teams.some((team) => team.teamId === teamId)
       ) {
         foundLeague = league;
         foundSeason = latestSeason;
@@ -525,7 +525,7 @@ const getStatsSummaryOfTeam = async (teamId) => {
 
     if (!foundLeague || !foundSeason) {
       throw new CustomError(
-        `Team ID ${formattedTeamId} is not found in any active league's latest season`,
+        `Team ID ${teamId} is not found in any active league's latest season`,
         404
       );
     }
@@ -538,7 +538,7 @@ const getStatsSummaryOfTeam = async (teamId) => {
     const teamStatsSummary = await summaryOfTeamStats(
       foundLeague.leagueId,
       foundSeason.year,
-      formattedTeamId
+      teamId
     );
 
     return teamStatsSummary;

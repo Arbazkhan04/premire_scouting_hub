@@ -74,11 +74,14 @@ const {
  */
 const getStatsSummaryOfTeamController = async (req, res, next) => {
   try {
-    const { teamId } = req.query;
+    let { teamId } = req.query;
 
     if (!teamId) {
       throw new CustomError("teamId is required", 400);
     }
+
+    // Convert teamId to a number safely
+    teamId = Number(String(teamId).trim());
 
     const teamStatsSummary = await getStatsSummaryOfTeam(teamId);
 
