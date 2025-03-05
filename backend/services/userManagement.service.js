@@ -75,7 +75,16 @@ const loginUser = async ({ email, password }) => {
   }
 
   const token = user.createJWT();
-  return { user, token };
+
+  const response = {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    userRole: user.userRole,
+    profilePictureURL: user.profilePictureURL,
+  };
+
+  return { response, token };
 };
 
 /**
