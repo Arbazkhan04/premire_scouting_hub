@@ -119,6 +119,7 @@ const {
   changeUserPassword,
   updateUsername,
   updateProfilePicture,
+  googleAuthService
 } = require('../services/userManagement.service.js');
 const responseHandler = require('../utils/responseHandler.js');
 const CustomError = require('../utils/customError.js');
