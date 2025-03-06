@@ -29,8 +29,19 @@ app.use(
   })
 );
 
+
+
+// ✅ Use express.raw() ONLY for Stripe webhooks
+app.use((req, res, next) => {
+  if (req.originalUrl === "/api/v1/stripe/webhook") {
+      next(); // Don't parse JSON for Stripe webhooks
+  } else {
+      express.json()(req, res, next); // Parse JSON for all other routes
+  }
+});
+
 // middlewares
-app.use(express.json());
+// app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(compression());
@@ -87,6 +98,10 @@ const americanFootballPlayersManagement = require("./american-Football/routes/pl
 const americanFootballGamesManagement = require("./american-Football/routes/games.routes");
 const americanFootballOddsManagement = require("./american-Football/routes/odds.routes");
 
+
+//STRIPE ROUTES 
+const stripeManagement=require("./stripe/stripe.routes")
+
 app.use("/api/v1/auth", userManagementRoutes);
 app.use("/api/v1/favourites", favouritesManagementRoutes);
 
@@ -101,6 +116,8 @@ app.use("/api/v1/american-football/team", americanFootballTeamsManagement);
 app.use("/api/v1/american-football/player", americanFootballPlayersManagement);
 app.use("/api/v1/american-football/games", americanFootballGamesManagement);
 app.use("/api/v1/american-football/odds", americanFootballOddsManagement);
+
+app.use("/api/v1/stripe", stripeManagement);
 
 // Error Handling Middleware
 app.use(errorHandler);
