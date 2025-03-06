@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
-const bcrypt = require('bcryptjs')
-const jwt = require('jsonwebtoken')
-const crypto = require('crypto')
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 
 const UserSchema = new mongoose.Schema({
   googleId: { type: String, default: null }, // Null for normal users
@@ -13,13 +13,16 @@ const UserSchema = new mongoose.Schema({
     enum: ["admin", "user"], // Allowed values
     default: "user", // Default value
   },
-  profilePictureURL: { type: String, default: null },
+  profilePictureURL: { type: String },
+  stripeCustomerId: { type: String },
+  subscriptionId: { type: String },
+  subscriptionStatus: { type: String },
 });
 
-UserSchema.pre('save', async function () {
-  if (!this.isModified('password')) return // Only hash if password field is modified
-  const salt = await bcrypt.genSalt(10)
-  this.password = await bcrypt.hash(this.password, salt)
+UserSchema.pre("save", async function () {
+  if (!this.isModified("password")) return; // Only hash if password field is modified
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
 });
 
 UserSchema.methods.createJWT = function () {
