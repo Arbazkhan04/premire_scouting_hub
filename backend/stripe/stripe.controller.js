@@ -14,13 +14,13 @@ const {
   const createCheckout = async (req, res, next) => {
     try {
       const userId = req.user.userId; // Extracted from auth middleware
-      const { email, priceId, autoRenewal } = req.body;
+      const { email, priceId, autoRenewal,subscriptionPlan } = req.body;
   
-      if (!email || !priceId) {
+      if (!email || !priceId || !subscriptionPlan) {
         return responseHandler(
           res,
           400,
-          "Email and PriceId are required",
+          "Email,PriceId and Subscription Plan are required",
           null
         );
       }
