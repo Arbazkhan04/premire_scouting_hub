@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const { auto } = require("async");
 
 const UserSchema = new mongoose.Schema({
   googleId: { type: String, default: null }, // Null for normal users
@@ -17,6 +18,12 @@ const UserSchema = new mongoose.Schema({
   stripeCustomerId: { type: String },
   subscriptionId: { type: String },
   subscriptionStatus: { type: String },
+  subscriptionPlan: {
+    type: String,
+    enum: ["monthly", "six_months", "yearly"], // Allowed values
+    default: null, // No subscription by default
+  },
+  autoRenewal: { type: Boolean },
 });
 
 UserSchema.pre("save", async function () {
