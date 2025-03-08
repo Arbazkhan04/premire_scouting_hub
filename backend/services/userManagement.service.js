@@ -37,7 +37,24 @@ const googleAuthService = async (token) => {
 
   // Generate JWT token
   const authToken = user.createJWT();
-  return { token: authToken, user };
+
+
+
+  const response = {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    userRole: user.userRole,
+    profilePictureURL: user.profilePictureURL,
+    subscriptionStatus:user?.subscriptionStatus,
+    subscriptionPlan:user?.subscriptionPlan,
+  token:authToken
+  };
+  
+  return response;
+
+
+  // return { token: authToken, user };
 };
 
 /**
