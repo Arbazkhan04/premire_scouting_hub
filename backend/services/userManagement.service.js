@@ -82,6 +82,9 @@ const loginUser = async ({ email, password }) => {
     email: user.email,
     userRole: user.userRole,
     profilePictureURL: user.profilePictureURL,
+    subscriptionStatus:user?.subscriptionStatus,
+    subscriptionPlan:user?.subscriptionPlan
+  
   };
 
   return { response, token };
