@@ -113,11 +113,11 @@ const loginUser = async ({ email, password }) => {
     userRole: user.userRole,
     profilePictureURL: user.profilePictureURL,
     subscriptionStatus:user?.subscriptionStatus,
-    subscriptionPlan:user?.subscriptionPlan
-  
+    subscriptionPlan:user?.subscriptionPlan,
+  token
   };
 
-  return { response, token };
+  return response;
 };
 
 /**
