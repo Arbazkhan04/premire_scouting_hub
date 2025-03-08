@@ -17,7 +17,7 @@ const UserSchema = new mongoose.Schema({
   profilePictureURL: { type: String },
   stripeCustomerId: { type: String },
   subscriptionId: { type: String },
-  subscriptionStatus: { type: String },
+  subscriptionStatus: { type: String ,default:null},
   subscriptionPlan: {
     type: String,
     enum: ["monthly", "six_months", "yearly"], // Allowed values
