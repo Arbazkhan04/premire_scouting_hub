@@ -51,11 +51,24 @@ const registerUser = async ({ name, email, password }) => {
   if (existingUser) {
     throw new CustomError("Email already in use", 400);
   }
+ 
 
   // Create a new user.
   const user = await User.create({ name, email, password });
   const token = user.createJWT();
-  return { user, token };
+
+  const response = {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    userRole: user.userRole,
+    profilePictureURL: user.profilePictureURL,
+    subscriptionStatus:user?.subscriptionStatus,
+    subscriptionPlan:user?.subscriptionPlan,
+  token
+  };
+  
+  return response;
 };
 
 /**
