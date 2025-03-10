@@ -25,7 +25,7 @@ const {
         );
       }
   
-      const sessionUrl = await createCheckoutSession(userId, email, priceId, autoRenewal);
+      const sessionUrl = await createCheckoutSession(userId, email, priceId, autoRenewal,subscriptionPlan);
       return responseHandler(res, 200, "Checkout session created", { sessionUrl });
     } catch (error) {
       next(
