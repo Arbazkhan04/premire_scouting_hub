@@ -1,5 +1,6 @@
 // services/UserService.js
 const User = require("../models/userModel.js");
+const { createStripeCustomer } = require("../stripe/stripe.service.js");
 const CustomError = require("../utils/customError.js");
 const { OAuth2Client } = require("google-auth-library");
 
@@ -31,14 +32,29 @@ const googleAuthService = async (token) => {
 
   // If the user does not exist, create a new one
   if (!user) {
-    user = new User({ email, name });
+    //create stripe costumer
+    const customer = await createStripeCustomer(email);
+    const stripeCustomerId = customer?.id;
+
+    // Set trial expiry date (30 days from now)
+    const trialExpiry = new Date();
+    trialExpiry.setDate(trialExpiry.getDate() + 30);
+
+    // Create a new user.
+    user = new User({
+      name,
+      email,
+      stripeCustomerId,
+      subscriptionStatus: "active",
+      subscriptionPlan: "trial",
+      subscriptionPlanExpiry: trialExpiry,
+      autoRenewal: false,
+    });
     await user.save();
   }
 
   // Generate JWT token
   const authToken = user.createJWT();
-
-
 
   const response = {
     _id: user._id,
@@ -46,13 +62,13 @@ const googleAuthService = async (token) => {
     email: user.email,
     userRole: user.userRole,
     profilePictureURL: user.profilePictureURL,
-    subscriptionStatus:user?.subscriptionStatus,
-    subscriptionPlan:user?.subscriptionPlan,
-  token:authToken
+    subscriptionStatus: user?.subscriptionStatus,
+    subscriptionPlan: user?.subscriptionPlan,
+    subscriptionPlanExpiry: user?.subscriptionPlanExpiry,
+    token: authToken,
   };
-  
-  return response;
 
+  return response;
 
   // return { token: authToken, user };
 };
@@ -68,10 +84,26 @@ const registerUser = async ({ name, email, password }) => {
   if (existingUser) {
     throw new CustomError("Email already in use", 400);
   }
- 
+
+  //create stripe costumer
+  const customer = await createStripeCustomer(email);
+  const stripeCustomerId = customer?.id;
+
+  // Set trial expiry date (30 days from now)
+  const trialExpiry = new Date();
+  trialExpiry.setDate(trialExpiry.getDate() + 30);
 
   // Create a new user.
-  const user = await User.create({ name, email, password });
+  const user = await User.create({
+    name,
+    email,
+    password,
+    stripeCustomerId,
+    subscriptionStatus: "active",
+    subscriptionPlan: "trial",
+    subscriptionPlanExpiry: trialExpiry,
+    autoRenewal: false,
+  });
   const token = user.createJWT();
 
   const response = {
@@ -80,11 +112,12 @@ const registerUser = async ({ name, email, password }) => {
     email: user.email,
     userRole: user.userRole,
     profilePictureURL: user.profilePictureURL,
-    subscriptionStatus:user?.subscriptionStatus,
-    subscriptionPlan:user?.subscriptionPlan,
-  token
+    subscriptionStatus: user?.subscriptionStatus,
+    subscriptionPlan: user?.subscriptionPlan,
+    subscriptionPlanExpiry: user?.subscriptionPlanExpiry,
+    token,
   };
-  
+
   return response;
 };
 
@@ -112,9 +145,9 @@ const loginUser = async ({ email, password }) => {
     email: user.email,
     userRole: user.userRole,
     profilePictureURL: user.profilePictureURL,
-    subscriptionStatus:user?.subscriptionStatus,
-    subscriptionPlan:user?.subscriptionPlan,
-  token
+    subscriptionStatus: user?.subscriptionStatus,
+    subscriptionPlan: user?.subscriptionPlan,
+    token,
   };
 
   return response;

@@ -248,4 +248,4 @@ const cancelSubscription = async (userId, email) => {
   }
 };
 
-module.exports = { createCheckoutSession, verifyPayment, stripeWebhookHandler, cancelSubscription };
+module.exports = { createCheckoutSession, verifyPayment, stripeWebhookHandler, cancelSubscription,createStripeCustomer };

@@ -20,9 +20,10 @@ const UserSchema = new mongoose.Schema({
   subscriptionStatus: { type: String ,default:null},
   subscriptionPlan: {
     type: String,
-    enum: ["monthly", "six_months", "yearly"], // Allowed values
+    enum: ["trial","monthly", "six_months", "yearly"], // Allowed values
     default: null, // No subscription by default
   },
+  subscriptionPlanExpiry: { type: Date, default: null }, // Trial expiration date
   autoRenewal: { type: Boolean },
 });
 
