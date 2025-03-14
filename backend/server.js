@@ -124,7 +124,7 @@ app.use(errorHandler);
 
 app.use("/", (req, res) => {
   res.send(
-    'Welcome to root page\n<a href="/auth/google">click here to login<a>'
+    'Hello World'
   );
 });
 
