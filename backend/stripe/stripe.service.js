@@ -39,7 +39,7 @@ const createCheckoutSession = async (userId, email, priceId, autoRenewal,subscri
         },
       ],
       customer: user.stripeCustomerId,
-      success_url: `${process.env.STRIPE_SUCCESS_URL}/${userId}`,
+      success_url: `${process.env.STRIPE_SUCCESS_URL}/${subscriptionPlan}`,
       cancel_url: process.env.STRIPE_CANCEL_URL,
       metadata: { userId, autoRenewal,subscriptionPlan }, //store autoRenewal preference
     });
