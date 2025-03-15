@@ -36,9 +36,9 @@ const googleAuthService = async (token) => {
     const customer = await createStripeCustomer(email);
     const stripeCustomerId = customer?.id;
 
-    // Set trial expiry date (30 days from now)
+    // Set trial expiry date (7 days from now)
     const trialExpiry = new Date();
-    trialExpiry.setDate(trialExpiry.getDate() + 30);
+    trialExpiry.setDate(trialExpiry.getDate() + 7);
 
     // Create a new user.
     user = new User({
@@ -89,9 +89,9 @@ const registerUser = async ({ name, email, password }) => {
   const customer = await createStripeCustomer(email);
   const stripeCustomerId = customer?.id;
 
-  // Set trial expiry date (30 days from now)
+  // Set trial expiry date (7 days from now)
   const trialExpiry = new Date();
-  trialExpiry.setDate(trialExpiry.getDate() + 30);
+  trialExpiry.setDate(trialExpiry.getDate() + 7);
 
   // Create a new user.
   const user = await User.create({
