@@ -1,5 +1,6 @@
 const User = require("../models/userModel");
 const CustomError = require("../utils/customError");
+const { getExpiryDate } = require("../utils/expiryDate");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 /**
@@ -8,7 +9,13 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
  * @param {string} priceId
  */
 
-const createCheckoutSession = async (userId, email, priceId, autoRenewal,subscriptionPlan) => {
+const createCheckoutSession = async (
+  userId,
+  email,
+  priceId,
+  autoRenewal,
+  subscriptionPlan
+) => {
   try {
     //check if the user exists in the database
     const user = await User.findById(userId);
@@ -41,7 +48,7 @@ const createCheckoutSession = async (userId, email, priceId, autoRenewal,subscri
       customer: user.stripeCustomerId,
       success_url: `${process.env.STRIPE_SUCCESS_URL}/${subscriptionPlan}`,
       cancel_url: process.env.STRIPE_CANCEL_URL,
-      metadata: { userId, autoRenewal,subscriptionPlan }, //store autoRenewal preference
+      metadata: { userId, autoRenewal, subscriptionPlan }, //store autoRenewal preference
     });
 
     return session.url;
@@ -115,6 +122,7 @@ const stripeWebhookHandler = async (event) => {
           console.error("❌ No Subscription ID found in event.");
           return;
         }
+        const planExpiryDate = getExpiryDate(subscriptionPlan);
 
         // ✅ If AutoRenewal is false, schedule cancellation at period end
         if (!autoRenewal) {
@@ -126,6 +134,7 @@ const stripeWebhookHandler = async (event) => {
             subscriptionId,
             subscriptionPlan,
             subscriptionStatus: "active",
+            subscriptionPlanExpiry:planExpiryDate,
             autoRenewal: false,
           });
 
@@ -136,6 +145,8 @@ const stripeWebhookHandler = async (event) => {
             subscriptionId,
             subscriptionPlan,
             subscriptionStatus: "active",
+            subscriptionPlanExpiry:planExpiryDate,
+
             autoRenewal: true,
           });
         }
@@ -171,9 +182,7 @@ const stripeWebhookHandler = async (event) => {
 
         await User.findOneAndUpdate(
           { subscriptionId: expiredSubscriptionId },
-          { subscriptionStatus: "expired",
-            subscriptionPlan:null
-           }
+          { subscriptionStatus: "expired", subscriptionPlan: null ,subscriptionPlanExpiry:null}
         );
 
         console.log("❌ Subscription expired or canceled.");
@@ -230,11 +239,11 @@ const cancelSubscription = async (userId, email) => {
       cancel_at_period_end: true, //cancel at the end of the current period
     });
 
-     // ✅ Update the database
-     await User.findByIdAndUpdate(userId, {
-        subscriptionStatus: "active",
-        autoRenewal: false, // ✅ Disable auto-renewal
-      });
+    // ✅ Update the database
+    await User.findByIdAndUpdate(userId, {
+      subscriptionStatus: "active",
+      autoRenewal: false, // ✅ Disable auto-renewal
+    });
 
     return {
       message:
@@ -248,4 +257,10 @@ const cancelSubscription = async (userId, email) => {
   }
 };
 
-module.exports = { createCheckoutSession, verifyPayment, stripeWebhookHandler, cancelSubscription,createStripeCustomer };
+module.exports = {
+  createCheckoutSession,
+  verifyPayment,
+  stripeWebhookHandler,
+  cancelSubscription,
+  createStripeCustomer,
+};

@@ -3,6 +3,7 @@ const User = require("../models/userModel.js");
 const { createStripeCustomer } = require("../stripe/stripe.service.js");
 const CustomError = require("../utils/customError.js");
 const { OAuth2Client } = require("google-auth-library");
+const { getExpiryDate } = require("../utils/expiryDate.js");
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -36,9 +37,11 @@ const googleAuthService = async (token) => {
     const customer = await createStripeCustomer(email);
     const stripeCustomerId = customer?.id;
 
-    // Set trial expiry date (7 days from now)
-    const trialExpiry = new Date();
-    trialExpiry.setDate(trialExpiry.getDate() + 7);
+    const trialExpiry=getExpiryDate("trial")
+
+    // // Set trial expiry date (7 days from now)
+    // const trialExpiry = new Date();
+    // trialExpiry.setDate(trialExpiry.getDate() + 7);
 
     // Create a new user.
     user = new User({
@@ -89,10 +92,10 @@ const registerUser = async ({ name, email, password }) => {
   const customer = await createStripeCustomer(email);
   const stripeCustomerId = customer?.id;
 
-  // Set trial expiry date (7 days from now)
-  const trialExpiry = new Date();
-  trialExpiry.setDate(trialExpiry.getDate() + 7);
-
+  // // Set trial expiry date (7 days from now)
+  // const trialExpiry = new Date();
+  // trialExpiry.setDate(trialExpiry.getDate() + 7);
+  const trialExpiry=getExpiryDate("trial")
   // Create a new user.
   const user = await User.create({
     name,
@@ -147,6 +150,7 @@ const loginUser = async ({ email, password }) => {
     profilePictureURL: user.profilePictureURL,
     subscriptionStatus: user?.subscriptionStatus,
     subscriptionPlan: user?.subscriptionPlan,
+    subscriptionPlanExpiry: user?.subscriptionPlanExpiry,
     token,
   };
 
