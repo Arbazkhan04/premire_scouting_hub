@@ -10,6 +10,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@langchain/community": "^0.3.37",
+    "@langchain/core": "^0.3.43",
     "async": "^3.2.6",
     "axios": "^1.7.9",
     "bcrypt": "^5.1.1",

@@ -239,6 +239,9 @@ app.use("/api/v1/american-football/player", require("./american-Football/routes/
 app.use("/api/v1/american-football/games", require("./american-Football/routes/games.routes"));
 app.use("/api/v1/american-football/odds", require("./american-Football/routes/odds.routes"));
 
+//Soccer AI prediction Routes
+app.use("/api/v1/soccer/AI",require("./soccer/routes/AIPrediction.routes"))
+
 // Stripe Routes
 app.use("/api/v1/stripe", require("./stripe/stripe.routes"));
 
