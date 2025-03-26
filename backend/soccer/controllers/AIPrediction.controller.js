@@ -5,6 +5,7 @@ const {
   deleteAIPrediction,
   getAndSaveFixtureAIPrediction,
   getAIPrediction,
+  getAllUpcomingFixturesPredictions
 } = require("../services/AIPrediction.service");
 const CustomError = require("../../utils/customError");
 const responseHandler = require("../../utils/responseHandler");
@@ -102,7 +103,7 @@ const getAIPredictionByFixtureIdController = async (req, res, next) => {
   try {
     console.log("📌 Fetching AI prediction by fixture ID...");
 
-    const { fixtureId } = req.params;
+    const { fixtureId } = req.query;
 
     if (!fixtureId) {
       throw new CustomError("Fixture ID is required", 400);
@@ -208,7 +209,7 @@ const getAndSaveFixtureAIPredictionController = async (req, res, next) => {
     }
 
     // Fetch AI prediction and save it
-    const savedPrediction = await getAndSaveFixtureAIPrediction(Number(fixtureId));
+    const savedPrediction = await getAndSaveFixtureAIPrediction([Number(fixtureId)]);
 
     return responseHandler(
       res,
@@ -224,6 +225,43 @@ const getAndSaveFixtureAIPredictionController = async (req, res, next) => {
 
 
 
+
+
+/**
+ * Controller to get all upcoming AI fixture predictions.
+ * Calls getAllUpcomingFixturesPredictions() and returns the structured response.
+ * @route GET /api/v1/soccer/ai-predictions/upcoming
+ * @returns {JSON} - List of upcoming AI predictions.
+ */
+const getAllUpcomingFixturesPredictionsController = async (req, res, next) => {
+  try {
+    console.log("📌 Fetching all upcoming AI fixture predictions...");
+
+    // Fetch upcoming predictions from the service
+    const upcomingPredictions = await getAllUpcomingFixturesPredictions();
+
+    return responseHandler(
+      res,
+      200,
+      upcomingPredictions.length > 0
+        ? "Upcoming AI predictions fetched successfully"
+        : "No upcoming AI predictions found",
+      upcomingPredictions
+    );
+  } catch (error) {
+    console.error(
+      "❌ Error in getAllUpcomingFixturesPredictionsController:",
+      error.message
+    );
+    next(
+      error instanceof CustomError ? error : new CustomError(error.message, 500)
+    );
+  }
+};
+
+
+
+
 module.exports = {
   fetchAndSaveAIPredictionController,
   getAIPredictionByFixtureIdController,
@@ -231,5 +269,5 @@ module.exports = {
   deleteAIPredictionByFixtureIdController,
   getAIPredictionController,
   getAndSaveFixtureAIPredictionController,
-
+  getAllUpcomingFixturesPredictionsController
 };

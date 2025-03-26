@@ -7,6 +7,7 @@ const moment = require("moment"); // For UTC time handling
 const { removeRecurringJob } = require("../../jobs/jobManager");
 const { getInPlayOdds } = require("./odds.service");
 const { soccerQueue } = require("../../jobs/jobQueue");
+const { processAIPredictionsForUpcomingFixtures } = require("./AIPrediction.service");
 
 const RAPIDAPI_KEY = process.env.SOCCER_API_KEY; // Secure API Key
 
@@ -312,6 +313,24 @@ const processUpcomingFixturesandEmit = async () => {
     SocketService.emitToAll("upcomingFixtures", response, (ack) => {
       console.log("Acknowledgment received from clients:", ack);
     });
+
+    SocketService.emitToAll("upcomingFixtures", response, (ack) => {
+      console.log("📤 Acknowledgment received from clients:", ack);
+    });
+
+     // Extract fixtureId and startTime from upcoming fixtures
+     const fixtureIdsWithStartTime = upcomingFixturesfromDB.flatMap((league) =>
+      league.fixtures.map((fixture) => ({
+        fixtureId: fixture.fixtureId,
+        startTime: fixture.date, // Assuming 'date' is the match start time
+      }))
+    );
+
+    console.log("📊 Extracted Fixture IDs with Start Time:", fixtureIdsWithStartTime);
+
+    // Process AI Predictions for extracted fixture IDs with start times
+    await processAIPredictionsForUpcomingFixtures(fixtureIdsWithStartTime);
+
   } catch (error) {
     console.error("Error processing upcoming fixtures:", error.message);
     throw new CustomError(

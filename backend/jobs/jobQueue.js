@@ -87,5 +87,46 @@ const scheduleRecurringJob = async (queue,jobName, payload, repeatTime) => {
 
 
 
+/**
+ * Schedule a recurring job, ensuring no duplicates exist.
+ * If a job with the same name exists, it will be removed before scheduling the new one.
+ * @param {Queue} queue - The BullMQ queue instance.
+ * @param {string} jobName - The name of the job.
+ * @param {object} payload - The data to pass to the job.
+ * @param {number} repeatTime - Time interval in milliseconds for the job to repeat.
+ */
+const deleteAndScheduleUniqueRecurringJob = async (queue, jobName, payload, repeatTime) => {
+  try {
+    // Define a unique scheduler ID based on the job name
+    const schedulerId = `${jobName}-scheduler`;
 
-module.exports = { soccerQueue, americanFootballQueue , addJob, scheduleRecurringJob };
+    // Remove existing job scheduler with the same ID, if it exists
+    await queue.removeJobScheduler(schedulerId);
+
+    // Schedule the new job
+    await queue.upsertJobScheduler(
+      schedulerId, // Unique scheduler ID
+      { every: repeatTime }, // Repeat interval
+      {
+        name: jobName, // Job name
+        data: payload, // Job payload
+        opts: {
+          removeOnComplete: false, // Retain completed jobs for inspection
+          removeOnFail: false,     // Retain failed jobs for debugging
+        },
+      }
+    );
+
+    console.log(`✅ Scheduled job "${jobName}" to run every ${repeatTime / 1000} seconds.`);
+  } catch (error) {
+    console.error(`❌ Error scheduling job "${jobName}":`, error.message);
+    throw new Error('Error scheduling recurring job');
+  }
+};
+
+
+
+
+
+
+module.exports = { soccerQueue, americanFootballQueue , addJob, scheduleRecurringJob,deleteAndScheduleUniqueRecurringJob };

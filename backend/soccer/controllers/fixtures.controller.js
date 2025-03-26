@@ -2,7 +2,8 @@ const {
     getAllUpcomingFixtures,
     processLiveFixtures,
     processFinishedFixtures,
-    getFixtureById
+    getFixtureById,
+    processUpcomingFixturesandEmit
   } = require("../services/fixtures.service");
   const CustomError = require("../../utils/customError");
 const responseHandler = require("../../utils/responseHandler");
@@ -134,11 +135,37 @@ const getFixtureByIdController = async (req, res, next) => {
 };
 
 
+
+
+
+/**
+ * Controller to process and emit upcoming fixtures.
+ * @route GET /api/v1/fixtures/upcoming
+ * @returns {JSON} - Success message with emitted fixture data.
+ */
+const processUpcomingFixturesAndEmitController = async (req, res, next) => {
+  try {
+    console.log("📊 Processing and emitting upcoming fixtures...");
+
+    // Call the service method to process and emit fixtures
+    await processUpcomingFixturesandEmit();
+
+    return responseHandler(res, 200, "Upcoming fixtures processed and emitted.");
+  } catch (error) {
+    console.error("❌ Error in processUpcomingFixturesAndEmitController:", error.message);
+    next(error instanceof CustomError ? error : new CustomError(error.message, 500));
+  }
+};
+
+
+
+
   
   module.exports = {
     getUpcomingFixturesController,
     getAllLiveFixturesController,
     getCompletedFixturesController,
-    getFixtureByIdController
+    getFixtureByIdController,
+    processUpcomingFixturesAndEmitController
   };
   
