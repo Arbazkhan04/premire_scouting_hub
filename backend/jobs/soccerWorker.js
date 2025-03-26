@@ -6,14 +6,32 @@ const { scheduleLiveScoreRecurringJob } = require("../soccer/services/soccerJobs
 const { removeJobsByName } = require("./jobManager");
 const { soccerQueue } = require("./jobQueue");
 const { processUpcomingFixturesOddsAndEmit } = require("../soccer/services/odds.service");
+const { AIPredictionJobHandler } = require("../soccer/services/AIPrediction.service");
 
 // Create a worker to process jobs
 const soccerWorker = new Worker(
   "soccerJobQueue",
   async (job) => {
     console.log(`🚀 Executing Job: ${job.name}`);
+   
 
     try {
+
+
+       // Handle fixture-specific jobs dynamically (e.g., "fixturePrediction-12345")
+       if (job.name.startsWith("fixturePrediction-")) {
+        const fixtureId = job.name.split("-")[1]; // Extract fixtureId
+        console.log(`⚽ Handling fixturePrediction job for Fixture ID: ${fixtureId}`);
+
+        // Call the AI prediction function for this fixture
+        await AIPredictionJobHandler(fixtureId)
+        // await getAndSaveSingleFixtureAIPrediction(Number(fixtureId));
+        return;
+      }
+
+
+
+
       switch (job.name) {
         case "fetchUpcomingFixtures":
           console.log("📅 Fetching upcoming fixtures...");

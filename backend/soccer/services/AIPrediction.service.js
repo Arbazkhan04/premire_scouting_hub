@@ -11,6 +11,7 @@ const {
   soccerQueue,
 } = require("../../jobs/jobQueue");
 const SocketService = require("../../sockets/socket");
+const { removeRecurringJob } = require("../../jobs/jobManager");
 
 /**
  * Get AI prediction for a fixture and save it to the database.
@@ -514,8 +515,8 @@ const getAndSaveFixtureAIandAddDelayedJob = async (fixtureIds) => {
         // Schedule unique recurring job (delete existing if present)
         await deleteAndScheduleUniqueRecurringJob(
           soccerQueue,
-          `fixture-${fixtureId}`, // Unique job name for each fixture
-          { fixtureId },
+          `fixturePrediction-${fixtureId}`, // Unique job name for each fixture
+          {},
           getDelayTime
         );
       }
@@ -534,6 +535,78 @@ const getAndSaveFixtureAIandAddDelayedJob = async (fixtureIds) => {
     throw new CustomError("Failed to get and save AI predictions", 500);
   }
 };
+/**
+ * Handles the AI Prediction job for a specific fixture.
+ * 1. Checks if the fixture exists and is valid.
+ * 2. Updates AI predictions and schedules the next update if applicable.
+ * 3. Removes outdated jobs.
+ * 4. Emits the updated AI predictions to all connected clients.
+ *
+ * @param {number} fixtureId - The fixture ID to process.
+ * @throws {CustomError} - Throws error if the process fails.
+ */
+const AIPredictionJobHandler = async (fixtureId) => {
+  try {
+    // 1. Fetch the AI prediction for the fixture
+    const fixture = await AIPrediction.findOne({ fixtureId });
+
+    // If fixture does not exist, remove its recurring job and exit
+    if (!fixture) {
+      console.log(`🗑️ Fixture not found. Removing job for fixture ID: ${fixtureId}`);
+      await removeRecurringJob(soccerQueue, `fixturePrediction-${fixtureId}-scheduler`);
+      return;
+    }
+
+    // 2. Check if the fixture date is outdated
+    const currentDate = new Date(); // Get current date
+    const fixtureDate = new Date(fixture.match.date); // Convert stored date to Date object
+
+    if (fixtureDate < currentDate) {
+      console.log(`📅 Fixture ID: ${fixtureId} is outdated. Removing job.`);
+      await removeRecurringJob(soccerQueue, `fixturePrediction-${fixtureId}-scheduler`);
+      return;
+    }
+
+    // 3. Update the fixture AI prediction
+    console.log(`🔄 Updating AI prediction for fixture ID: ${fixtureId}`);
+    const savedPrediction = await getAndSaveSingleFixtureAIPrediction(fixtureId);
+
+    // 4. Calculate delay for the next update
+    const getDelayTime = calculateNextUpdateDelay(savedPrediction.match.date);
+
+    if (getDelayTime) {
+      console.log(`⏳ Adding delayed job for fixture ID: ${fixtureId}`);
+      await deleteAndScheduleUniqueRecurringJob(
+        soccerQueue,
+        `fixturePrediction-${fixtureId}`, // Unique job name for each fixture
+        { fixtureId }, // Pass fixtureId to the job payload
+        getDelayTime
+      );
+    }
+
+    // 5. Fetch the latest upcoming fixture AI predictions
+    const allUpcomingFixturesPredictions = await getAllUpcomingFixturesPredictions();
+
+    // 6. Emit the updated predictions to all connected clients
+    const response = {
+      success: true,
+      message: "Upcoming fixture predictions updated successfully",
+      data: allUpcomingFixturesPredictions,
+    };
+
+    SocketService.emitToAll(
+      "SoccerUpcomingFixturesAIPredictions",
+      response,
+      (ack) => {
+        console.log("📤 Acknowledgment received from clients:", ack);
+      }
+    );
+
+  } catch (error) {
+    console.error("❌ Error in AIPredictionJobHandler:", error.message);
+    throw new CustomError(`Error in AIPredictionJobHandler: ${error.message}`, 500);
+  }
+};
 
 module.exports = {
   fetchAndSaveAIPrediction,
@@ -545,4 +618,5 @@ module.exports = {
   getAndSaveFixtureAIPrediction,
   getAllUpcomingFixturesPredictions,
   processAIPredictionsForUpcomingFixtures,
+  AIPredictionJobHandler
 };
