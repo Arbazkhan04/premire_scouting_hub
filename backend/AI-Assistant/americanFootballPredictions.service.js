@@ -78,15 +78,16 @@ const generatePredictions = async (input) => {
         "system",
         `You are an expert in American football predictions. Please analyze the given game and provide predictions strictly in the following JSON format without any extra text:{responseFormat}.Ensure that all fields are filled according to the schema. If data is unavailable, use null or a reasonable placeholder.`,
       ],
-      ["human", input],
+      ["human", "{input}"],
     ]);
 
     const chain = prompt.pipe(llm);
     const result = await chain.invoke(input);
+    const jsonResponse = result.content.replace(/^```json\n|```$/g, '');
 
     console.log("Full Response:", JSON.stringify(result.content, null, 2));
 
-    return JSON.parse(result.content); // Ensure it's a valid JSON object
+    return JSON.parse(jsonResponse); // Ensure it's a valid JSON object
   } catch (error) {
     console.error("Error generating predictions:", error);
     return null;
@@ -343,7 +344,7 @@ const runPipeline = async (input) => {
 
   const rawResponse = await generatePredictions(input);
   if (!rawResponse) return;
-  console.log("Full Response:", JSON.stringify(rawResponse, null, 2));
+  console.log("Full Responsefsafd:", JSON.stringify(rawResponse, null, 2));
 //   const escapedResponse = escapeJSON(JSON.stringify(rawResponse));
 //   const formattedResponse = await reformatResponse({
 //     escapedResponse,

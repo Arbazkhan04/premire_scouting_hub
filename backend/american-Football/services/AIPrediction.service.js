@@ -21,7 +21,8 @@ const getAndSaveSingleGameAIPrediction = async (gameId) => {
     const predictionData = await getAIPrediction(gameId);
 
     // Step 2: Save AI prediction to the database
-    const savedPrediction = await saveSingleGameAIPrediction(gameId, predictionData);
+    const savedPrediction =await fetchAndSaveAIPredictions([predictionData]);
+    // const savedPrediction = await saveSingleGameAIPrediction(gameId, predictionData);
 
     return savedPrediction;
   } catch (error) {
@@ -102,12 +103,54 @@ const getAIPrediction = async (gameId) => {
     console.log(JSON.stringify(predictionData, null, 2));
 
     // Prepare formatted prediction data
+    // const formattedPrediction = {
+    //   gameId: game.gameId,
+    //   match: {
+    //     homeTeam: { id: game.teams.home.id, name: game.teams.home.name },
+    //     awayTeam: { id: game.teams.away.id, name: game.teams.away.name },
+    //     date: game.date.date,
+    //     league: { id: game.league.id, name: game.league.name },
+    //   },
+    //   predictions: {
+    //     matchOutcome: {
+    //       win: {
+    //         home: predictionData.predictions.matchOutcome.win.home,
+    //         away: predictionData.predictions.matchOutcome.win.away,
+    //       },
+    //       correctScore: {
+    //         home: predictionData.predictions.matchOutcome.correctScore.home,
+    //         away: predictionData.predictions.matchOutcome.correctScore.away,
+    //       },
+    //       halftimeFulltime: {
+    //         halftime: predictionData.predictions.matchOutcome.halftimeFulltime.halftime,
+    //         fulltime: predictionData.predictions.matchOutcome.halftimeFulltime.fulltime,
+    //       },
+    //       firstToScore: predictionData.predictions.matchOutcome.firstToScore,
+    //       marginOfVictory: predictionData.predictions.matchOutcome.marginOfVictory,
+    //       spreadBetting: predictionData.predictions.matchOutcome.spreadBetting,
+    //       overUnderTotalPoints: predictionData.predictions.matchOutcome.overUnderTotalPoints,
+    //     },
+    //     playerPerformance: predictionData.predictions.playerPerformance.map((player) => ({
+    //       player: {
+    //         id: player.player.id,
+    //         name: player.player.name,
+    //         team: player.player.team,
+    //         position: player.player.position,
+    //       },
+    //       stats: player.stats,
+    //     })),
+    //     teamPerformance: predictionData.predictions.teamPerformance,
+    //   },
+    // };
+
+
+
     const formattedPrediction = {
       gameId: game.gameId,
       match: {
         homeTeam: { id: game.teams.home.id, name: game.teams.home.name },
         awayTeam: { id: game.teams.away.id, name: game.teams.away.name },
-        date: game.date,
+        date: game.date.date,
         league: { id: game.league.id, name: game.league.name },
       },
       predictions: {
@@ -139,8 +182,39 @@ const getAIPrediction = async (gameId) => {
           stats: player.stats,
         })),
         teamPerformance: predictionData.predictions.teamPerformance,
+        bettingOdds: {
+          bestValueBets: predictionData.predictions.bettingOdds.bestValueBets,
+          safeBets: predictionData.predictions.bettingOdds.safeBets,
+          highRiskBets: predictionData.predictions.bettingOdds.highRiskBets,
+          arbitrageOpportunities: predictionData.predictions.bettingOdds.arbitrageOpportunities,
+          liveBettingSuggestions: predictionData.predictions.bettingOdds.liveBettingSuggestions,
+        },
+        gameSpecific: {
+          penalties: predictionData.predictions.gameSpecific.penalties,
+          challenges: {
+            total: predictionData.predictions.gameSpecific.challenges.total,
+            successful: predictionData.predictions.gameSpecific.challenges.successful,
+          },
+          fourthDownConversions: predictionData.predictions.gameSpecific.fourthDownConversions,
+          successfulOnsideKicks: predictionData.predictions.gameSpecific.successfulOnsideKicks,
+          injuryImpact: predictionData.predictions.gameSpecific.injuryImpact,
+        },
+        streakAndForm: {
+          teamWinningStreak: {
+            home: predictionData.predictions.streakAndForm.teamWinningStreak.home,
+            away: predictionData.predictions.streakAndForm.teamWinningStreak.away,
+          },
+          headToHeadComparison: predictionData.predictions.streakAndForm.headToHeadComparison,
+          homeAwayPerformance: predictionData.predictions.streakAndForm.homeAwayPerformance,
+        },
+        weatherInfluence: {
+          temperature: predictionData.predictions.weatherInfluence.temperature,
+          condition: predictionData.predictions.weatherInfluence.condition,
+          impactOnGame: predictionData.predictions.weatherInfluence.impactOnGame,
+        },
       },
     };
+    
 
     console.log("✅ Formatted Prediction:", JSON.stringify(formattedPrediction, null, 2));
 

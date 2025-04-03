@@ -47,8 +47,10 @@
 
 require("dotenv").config();
 
-const { ChatPerplexity }=require("@langchain/community/chat_models/perplexity");
-const { ChatPromptTemplate }=require("@langchain/core/prompts");
+const {
+  ChatPerplexity,
+} = require("@langchain/community/chat_models/perplexity");
+const { ChatPromptTemplate } = require("@langchain/core/prompts");
 
 const llm = new ChatPerplexity({
   model: "sonar-pro",
@@ -100,7 +102,7 @@ const generatePredictions = async (input) => {
           "(4) Betting Odds & Recommendations: Best value bets, safe vs. high-risk bets, arbitrage opportunities, live in-game betting suggestions. " +
           "(5) Game-Specific Predictions: Penalty predictions, substitutions impact, injury time goals probability. " +
           "(6) Streak & Form-Based Predictions: Team winning streaks, head-to-head comparisons, home/away performance trends. " +
-          "(7) Weather & External Factors Impact: Weather-based predictions, referee influence. Response strictly in following JSON format {responseFormatt}.",
+          "(7) Weather & External Factors Impact: Weather-based predictions, referee influence. Response strictly in following format {responseFormatt}.",
       ],
       ["human", "{input}"],
     ]);
@@ -133,12 +135,19 @@ const reformatResponse = async (response) => {
       "Formatted Response:",
       JSON.stringify(formattedResult.content, null, 2)
     );
-    return JSON.parse(formattedResult.content); // Ensure response is JSON
+
+  const jsonResponse = formattedResult.content.replace(/^```json\n|```$/g, '');
+
+  return jsonResponse;
+
+    // return JSON.parse(formattedResult.content); // Ensure response is JSON
   } catch (error) {
     console.error("Error reformatting response:", error);
     return null;
   }
 };
+
+
 
 const responseFormat = `{ 
 
@@ -344,13 +353,17 @@ const runPipeline = async (input) => {
   // };
 
   const rawResponse = await generatePredictions(input);
+  const jsonResponse = rawResponse.replace(/^```json\n|```$/g, '');
   if (!rawResponse) return;
-  console.log("Full Response:", JSON.stringify(rawResponse, null, 2));
-  const escapedResponse = escapeJSON(JSON.stringify(rawResponse));
+  console.log("Full Response:", JSON.stringify(jsonResponse, null, 2));
+  const escapedResponse = escapeJSON(JSON.stringify(jsonResponse));
   const formattedResponse = await reformatResponse({
     escapedResponse,
     responseFormatt: responseFormat,
   });
+
+  
+
   if (!formattedResponse) return;
   return formattedResponse;
   // await saveToDatabase(formattedResponse);

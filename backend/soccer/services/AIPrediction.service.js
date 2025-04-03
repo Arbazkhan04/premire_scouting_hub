@@ -106,8 +106,11 @@ const getAIPrediction = async (fixtureId) => {
     };
 
     //run the pipeline
-    const predictionData = await runPipeline(input);
-    // console.log(predictionData);
+    const predictionDatas = await runPipeline(input);
+  
+    const predictionData=JSON.parse(predictionDatas)
+
+
     console.log(JSON.stringify(predictionData, null, 2));
 
     //prepare prediction data
@@ -552,8 +555,13 @@ const AIPredictionJobHandler = async (fixtureId) => {
 
     // If fixture does not exist, remove its recurring job and exit
     if (!fixture) {
-      console.log(`🗑️ Fixture not found. Removing job for fixture ID: ${fixtureId}`);
-      await removeRecurringJob(soccerQueue, `fixturePrediction-${fixtureId}-scheduler`);
+      console.log(
+        `🗑️ Fixture not found. Removing job for fixture ID: ${fixtureId}`
+      );
+      await removeRecurringJob(
+        soccerQueue,
+        `fixturePrediction-${fixtureId}-scheduler`
+      );
       return;
     }
 
@@ -563,13 +571,18 @@ const AIPredictionJobHandler = async (fixtureId) => {
 
     if (fixtureDate < currentDate) {
       console.log(`📅 Fixture ID: ${fixtureId} is outdated. Removing job.`);
-      await removeRecurringJob(soccerQueue, `fixturePrediction-${fixtureId}-scheduler`);
+      await removeRecurringJob(
+        soccerQueue,
+        `fixturePrediction-${fixtureId}-scheduler`
+      );
       return;
     }
 
     // 3. Update the fixture AI prediction
     console.log(`🔄 Updating AI prediction for fixture ID: ${fixtureId}`);
-    const savedPrediction = await getAndSaveSingleFixtureAIPrediction(fixtureId);
+    const savedPrediction = await getAndSaveSingleFixtureAIPrediction(
+      fixtureId
+    );
 
     // 4. Calculate delay for the next update
     const getDelayTime = calculateNextUpdateDelay(savedPrediction.match.date);
@@ -585,7 +598,8 @@ const AIPredictionJobHandler = async (fixtureId) => {
     }
 
     // 5. Fetch the latest upcoming fixture AI predictions
-    const allUpcomingFixturesPredictions = await getAllUpcomingFixturesPredictions();
+    const allUpcomingFixturesPredictions =
+      await getAllUpcomingFixturesPredictions();
 
     // 6. Emit the updated predictions to all connected clients
     const response = {
@@ -601,10 +615,12 @@ const AIPredictionJobHandler = async (fixtureId) => {
         console.log("📤 Acknowledgment received from clients:", ack);
       }
     );
-
   } catch (error) {
     console.error("❌ Error in AIPredictionJobHandler:", error.message);
-    throw new CustomError(`Error in AIPredictionJobHandler: ${error.message}`, 500);
+    throw new CustomError(
+      `Error in AIPredictionJobHandler: ${error.message}`,
+      500
+    );
   }
 };
 
@@ -618,5 +634,5 @@ module.exports = {
   getAndSaveFixtureAIPrediction,
   getAllUpcomingFixturesPredictions,
   processAIPredictionsForUpcomingFixtures,
-  AIPredictionJobHandler
+  AIPredictionJobHandler,
 };
