@@ -1,7 +1,8 @@
 const express = require("express");
 const { 
   getSingleGamePrediction, 
-  getMultipleGamePredictions 
+  getMultipleGamePredictions, 
+  getUpcomingPredictions
 } = require("../controllers/AIPrediction.controller");
 
 const router = express.Router();
@@ -11,5 +12,9 @@ router.get("/americanFootballPrediction", getSingleGamePrediction);
 
 // Route to get and save multiple game AI predictions
 router.post("/games/predictions", getMultipleGamePredictions);
+
+
+// Route to fetch upcoming AI predictions
+router.get("/upcoming-predictions", getUpcomingPredictions);
 
 module.exports = router;

@@ -1,6 +1,7 @@
 const { 
     getAndSaveSingleGameAIPrediction, 
-    getAndSaveGameAIPredictions 
+    getAndSaveGameAIPredictions,
+    getAllAiPredictions
   } = require("../services/AIPrediction.service");
   const CustomError = require("../../utils/customError");
   
@@ -64,8 +65,37 @@ const {
     }
   };
   
+
+
+
+  /**
+ * Controller to get all AI predictions where the match date is greater than the current date and time.
+ * @param {Request} req - Express request object.
+ * @param {Response} res - Express response object.
+ */
+const getUpcomingPredictions = async (req, res, next) => {
+  try {
+    console.log("🚀 Fetching upcoming AI predictions...");
+
+    // Get all upcoming AI predictions from the service
+    const upcomingPredictions = await getAllAiPredictions();
+
+    res.status(200).json({
+      success: true,
+      message: "Upcoming AI predictions fetched successfully",
+      data: upcomingPredictions,
+    });
+  } catch (error) {
+    console.error("❌ Error in getUpcomingPredictions:", error.message);
+    next(error);
+  }
+};
+
+
+
   module.exports = {
     getSingleGamePrediction,
     getMultipleGamePredictions,
+    getUpcomingPredictions
   };
   

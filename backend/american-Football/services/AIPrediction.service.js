@@ -260,7 +260,31 @@ const fetchAndSaveAIPredictions = async (predictions) => {
   }
 };
 
+
+/**
+ * Get all AI predictions where the match date is greater than the current date and time.
+ * @returns {Promise<Object[]>} - Array of AI prediction documents.
+ * @throws {CustomError} - Throws error if fetching fails.
+ */
+const getAllAiPredictions = async () => {
+  try {
+    const currentDate = new Date();
+
+    // Fetch predictions from the database where match date is greater than the current date
+    const predictions = await AmericanFootballPrediction.find({
+      "match.date": { $gt: currentDate }
+    });
+
+    // Return the predictions
+    return predictions;
+  } catch (error) {
+    console.error("❌ Error in getAllAiPredictions:", error.message);
+    throw new CustomError("Failed to get AI predictions", 500);
+  }
+};
+
 module.exports = {
   getAndSaveSingleGameAIPrediction,
   getAndSaveGameAIPredictions,
+  getAllAiPredictions,  
 };
