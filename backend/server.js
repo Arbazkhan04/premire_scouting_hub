@@ -176,8 +176,8 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
 // Workers for background jobs
-require("./jobs/soccerWorker");
-require("./jobs/americanFootballWorker");
+// require("./jobs/soccerWorker");
+// require("./jobs/americanFootballWorker");
 
 const app = express();
 const server = http.createServer(app);
