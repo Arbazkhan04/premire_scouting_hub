@@ -4,7 +4,7 @@ require("dotenv").config({ path: `.env.${process.env.NODE_ENV}` });
 const { Worker } = require("bullmq");
 const redis = require("../config/redis");
 const axios = require("axios");
-const {processUpcomingFixturesandEmit, processLiveFixturesAndEmit} =require("../soccer/services/fixtures.service");
+const {processUpcomingFixturesandEmit, processLiveFixturesAndEmit, processtestingJobandEmit} =require("../soccer/services/fixtures.service");
 const { scheduleLiveScoreRecurringJob } = require("../soccer/services/soccerJobs.service");
 const { removeJobsByName } = require("./jobManager");
 const { soccerQueue } = require("./jobQueue");
@@ -36,6 +36,14 @@ const soccerWorker = new Worker(
 
 
       switch (job.name) {
+
+        case "testingJob":
+          console.log("running testing delay job...");
+         await processtestingJobandEmit();
+          // console.log(`✅ Live scores updated:`, scoresResponse.data);
+          break;
+
+
         case "fetchUpcomingFixtures":
           console.log("📅 Fetching upcoming fixtures...");
          await processUpcomingFixturesandEmit();

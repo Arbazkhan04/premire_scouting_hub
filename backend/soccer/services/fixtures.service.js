@@ -6,7 +6,7 @@ const SocketService = require("../../sockets/socket");
 const moment = require("moment"); // For UTC time handling
 const { removeRecurringJob } = require("../../jobs/jobManager");
 const { getInPlayOdds } = require("./odds.service");
-const { soccerQueue } = require("../../jobs/jobQueue");
+const { soccerQueue, scheduleRecurringJob } = require("../../jobs/jobQueue");
 const { processAIPredictionsForUpcomingFixtures } = require("./AIPrediction.service");
 
 const RAPIDAPI_KEY = process.env.SOCCER_API_KEY; // Secure API Key
@@ -298,6 +298,10 @@ const upcomingFixtures = async () => {
  */
 const processUpcomingFixturesandEmit = async () => {
   try {
+
+    //just testing the jobs and sockets
+  await scheduleRecurringJob(soccerQueue,"testingJob", {}, 60 * 1000);
+
     // Fetch and process fresh upcoming fixtures
     const upcomingFixturess = await upcomingFixtures();
 
@@ -335,6 +339,41 @@ const processUpcomingFixturesandEmit = async () => {
     console.error("Error processing upcoming fixtures:", error.message);
     throw new CustomError(
       error.message || "Failed to process upcoming fixtures",
+      500
+    );
+  }
+};
+
+
+
+
+/**
+ * Process tesingjob
+ * @throws {CustomError} - Throws error if processing or emitting fails.
+ */
+const processtestingJobandEmit = async () => {
+  try {
+
+    //just testing the jobs and sockets
+  // await scheduleRecurringJob(soccerQueue,"testingJob", {}, 60 * 1000);
+
+   
+    const response = {
+      success: true,
+      message: "testing Job processed successfully",
+      data: null,
+    };
+    SocketService.emitToAll("testingEvent", response, (ack) => {
+      console.log("Acknowledgment received from clients:", ack);
+    });
+
+ 
+
+   
+  } catch (error) {
+    console.error("Error processing testing job:", error.message);
+    throw new CustomError(
+      error.message || "Failed to process testing job",
       500
     );
   }
@@ -1008,5 +1047,6 @@ module.exports = {
   processFinishedFixtures,
   getUpcomingFixturesFromDB,
   getCompletedFixturesFromDB,
-  getFixtureById
+  getFixtureById,
+  processtestingJobandEmit
 };

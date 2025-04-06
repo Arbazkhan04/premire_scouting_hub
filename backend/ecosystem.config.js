@@ -9,25 +9,26 @@ module.exports = {
         env: {
           NODE_ENV: "production",
         },
+        env_file: ".env.production"
       },
-      {
-        name: "soccer-worker",
-        script: "./jobs/soccerWorker.js",
-        instances: 1,
-        exec_mode: "fork",
-        env: {
-          NODE_ENV: "production",
-        },
-      },
-      {
-        name: "american-football-worker",
-        script: "./jobs/americanFootballWorker.js",
-        instances: 1,
-        exec_mode: "fork",
-        env: {
-          NODE_ENV: "production",
-        },
-      },
+    //   {
+    //     name: "soccer-worker",
+    //     script: "./jobs/soccerWorker.js",
+    //     instances: 1,
+    //     exec_mode: "fork",
+    //     env: {
+    //       NODE_ENV: "production",
+    //     },
+    //   },
+    //   {
+    //     name: "american-football-worker",
+    //     script: "./jobs/americanFootballWorker.js",
+    //     instances: 1,
+    //     exec_mode: "fork",
+    //     env: {
+    //       NODE_ENV: "production",
+    //     },
+    //   },
     ],
   };
   
