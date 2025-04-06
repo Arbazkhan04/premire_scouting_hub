@@ -1,3 +1,6 @@
+
+require("dotenv").config({ path: `.env.${process.env.NODE_ENV}` });
+
 const { Worker } = require("bullmq");
 const redis = require("../config/redis");
 const axios = require("axios");
