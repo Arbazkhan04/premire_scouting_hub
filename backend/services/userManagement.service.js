@@ -320,7 +320,20 @@ const updateProfile = async (payload) => {
       throw new CustomError("User not found", 404);
     }
 
-    return user;
+    const response = {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      googleId:user.googleId,
+      userRole: user.userRole,
+      profilePictureURL: user.profilePictureURL,
+      subscriptionStatus: user?.subscriptionStatus,
+      subscriptionPlan: user?.subscriptionPlan,
+      subscriptionPlanExpiry: user?.subscriptionPlanExpiry,
+      token,
+    };
+  
+    return response;
 
   } catch (error) {
     console.error('Error updating profile:', error.message);
