@@ -330,7 +330,7 @@ const updateProfile = async (payload) => {
       subscriptionStatus: user?.subscriptionStatus,
       subscriptionPlan: user?.subscriptionPlan,
       subscriptionPlanExpiry: user?.subscriptionPlanExpiry,
-      token,
+     
     };
   
     return response;
