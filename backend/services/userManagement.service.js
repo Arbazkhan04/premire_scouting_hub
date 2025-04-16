@@ -12,6 +12,71 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
  * @param {string} token - Google ID token.
  * @returns {Promise<Object>} - User data and JWT token.
  */
+// const googleAuthService = async (token) => {
+//   let payload;
+
+//   try {
+//     const ticket = await client.verifyIdToken({
+//       idToken: token,
+//       audience: process.env.GOOGLE_CLIENT_ID,
+//     });
+
+//     payload = ticket.getPayload();
+//   } catch (error) {
+//     throw new CustomError("Invalid Google token", 401);
+//   }
+
+//   const { email, name } = payload;
+
+//   // Check if the user exists in the database
+//   let user = await User.findOne({ email });
+
+//   // If the user does not exist, create a new one
+//   if (!user) {
+//     //create stripe costumer
+//     const customer = await createStripeCustomer(email);
+//     const stripeCustomerId = customer?.id;
+
+//     const trialExpiry=getExpiryDate("trial")
+
+//     // // Set trial expiry date (7 days from now)
+//     // const trialExpiry = new Date();
+//     // trialExpiry.setDate(trialExpiry.getDate() + 7);
+
+//     // Create a new user.
+//     user = new User({
+//       name,
+//       email,
+//       stripeCustomerId,
+//       subscriptionStatus: "active",
+//       subscriptionPlan: "trial",
+//       subscriptionPlanExpiry: trialExpiry,
+//       autoRenewal: false,
+//     });
+//     await user.save();
+//   }
+
+//   // Generate JWT token
+//   const authToken = user.createJWT();
+
+//   const response = {
+//     _id: user._id,
+//     name: user.name,
+//     email: user.email,
+//     userRole: user.userRole,
+//     profilePictureURL: user.profilePictureURL,
+//     subscriptionStatus: user?.subscriptionStatus,
+//     subscriptionPlan: user?.subscriptionPlan,
+//     subscriptionPlanExpiry: user?.subscriptionPlanExpiry,
+//     token: authToken,
+//   };
+
+//   return response;
+
+//   // return { token: authToken, user };
+// };
+
+
 const googleAuthService = async (token) => {
   let payload;
 
@@ -26,33 +91,33 @@ const googleAuthService = async (token) => {
     throw new CustomError("Invalid Google token", 401);
   }
 
-  const { email, name } = payload;
+  const { email, name, sub: googleId, picture: profilePictureURL } = payload;
 
   // Check if the user exists in the database
   let user = await User.findOne({ email });
 
   // If the user does not exist, create a new one
   if (!user) {
-    //create stripe costumer
     const customer = await createStripeCustomer(email);
     const stripeCustomerId = customer?.id;
+    const trialExpiry = getExpiryDate("trial");
 
-    const trialExpiry=getExpiryDate("trial")
-
-    // // Set trial expiry date (7 days from now)
-    // const trialExpiry = new Date();
-    // trialExpiry.setDate(trialExpiry.getDate() + 7);
-
-    // Create a new user.
     user = new User({
       name,
       email,
+      googleId, // Save Google ID here ✅
+      profilePictureURL, // Optional, if you want to store it
       stripeCustomerId,
       subscriptionStatus: "active",
       subscriptionPlan: "trial",
       subscriptionPlanExpiry: trialExpiry,
       autoRenewal: false,
     });
+
+    await user.save();
+  }else if (!user.googleId) {
+    // ✅ If existing user logged in via email earlier, now logging via Google, add the googleId
+    user.googleId = googleId;
     await user.save();
   }
 
@@ -63,6 +128,7 @@ const googleAuthService = async (token) => {
     _id: user._id,
     name: user.name,
     email: user.email,
+    googleId:user.googleId,
     userRole: user.userRole,
     profilePictureURL: user.profilePictureURL,
     subscriptionStatus: user?.subscriptionStatus,
@@ -72,9 +138,9 @@ const googleAuthService = async (token) => {
   };
 
   return response;
-
-  // return { token: authToken, user };
 };
+
+
 
 /**
  * Register a new user.
@@ -146,6 +212,7 @@ const loginUser = async ({ email, password }) => {
     _id: user._id,
     name: user.name,
     email: user.email,
+    googleId:user.googleId,
     userRole: user.userRole,
     profilePictureURL: user.profilePictureURL,
     subscriptionStatus: user?.subscriptionStatus,
@@ -211,6 +278,59 @@ const updateProfilePicture = async ({ userId, profilePicture }) => {
   return { message: "Profile picture updated successfully" };
 };
 
+
+/**
+ * Update any field of the user profile
+ * @param {*} payload 
+ * @returns 
+ */
+const updateProfile = async (payload) => {
+  try {
+    const { userId, ...updateData } = payload;
+
+    const allowedFields = ['name', 'profilePictureURL']; // Allowed fields only
+    const incomingFields = Object.keys(updateData);
+
+    // Check for any disallowed fields
+    const invalidFields = incomingFields.filter(key => !allowedFields.includes(key));
+
+    if (invalidFields.length > 0) {
+      throw new CustomError(`Invalid field(s): ${invalidFields.join(', ')}`, 400);
+    }
+
+    // Filter only valid fields with non-null values
+    const updateFields = incomingFields.reduce((acc, key) => {
+      if (updateData[key] !== undefined && updateData[key] !== null) {
+        acc[key] = updateData[key];
+      }
+      return acc;
+    }, {});
+
+    if (Object.keys(updateFields).length === 0) {
+      throw new CustomError('No valid fields provided to update', 400);
+    }
+
+    const user = await User.findOneAndUpdate(
+      { _id: userId },
+      { $set: updateFields },
+      { new: true }
+    );
+
+    if (!user) {
+      throw new CustomError("User not found", 404);
+    }
+
+    return user;
+
+  } catch (error) {
+    console.error('Error updating profile:', error.message);
+    throw new CustomError(
+      error.message || "Error updating user profile",
+      error.statusCode || 500
+    );
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -218,4 +338,5 @@ module.exports = {
   updateUsername,
   updateProfilePicture,
   googleAuthService,
+  updateProfile
 };

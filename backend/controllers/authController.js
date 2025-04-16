@@ -119,7 +119,8 @@ const {
   changeUserPassword,
   updateUsername,
   updateProfilePicture,
-  googleAuthService
+  googleAuthService,
+  updateProfile
 } = require('../services/userManagement.service.js');
 const responseHandler = require('../utils/responseHandler.js');
 const CustomError = require('../utils/customError.js');
@@ -204,6 +205,39 @@ const updateProfilePictureController = async (req, res, next) => {
 };
 
 /**
+ * Controller to update any field of a user's profile 
+ */
+const updateUserProfile = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const payload = { ...req.body };
+    console.log(payload)
+
+    // Get uploaded file URL from multerS3 (if any)
+    const fileInfo = req.files?.profilePicture?.[0]; 
+    const uploadedUrl = fileInfo?.location;
+
+    if (uploadedUrl) {
+      payload.profilePictureURL = uploadedUrl; // Add to payload if image uploaded
+    }
+
+    // Attach userId to payload
+    const finalPayload = {
+      userId,
+      ...payload,
+    };
+
+    const updatedUser = await updateProfile(finalPayload); // Pass full payload
+    responseHandler(res, 200, "Profile updated successfully", updatedUser);
+    
+  } catch (error) {
+    console.error('Error in updateUserProfile controller:', error.message);
+    next(error instanceof CustomError ? error : new CustomError(error.message, 500));
+  }
+};
+
+
+/**
  * Controller to logout a user.
  * Note: Assuming PassportJS-style logout. Adjust according to your auth implementation.
  */
@@ -244,5 +278,6 @@ module.exports = {
   logout,
   updateUsernameController,
   updateProfilePictureController,
-  googleAuthController
+  googleAuthController,
+  updateUserProfile
 };

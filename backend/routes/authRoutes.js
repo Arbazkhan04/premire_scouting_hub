@@ -78,9 +78,12 @@ const {
   updateUsernameController,
   updateProfilePictureController,
   googleAuthController,
+  updateUserProfile
 } = require("../controllers/authController");
 
 const { auth, authorizeRoles } = require("../middlewares/authentication");
+const s3UploadMiddleware = require('../middlewares/s3FileHandling');
+
 
 const router = express.Router();
 
@@ -98,5 +101,17 @@ router.post("/google", googleAuthController);
 
 // Logout
 router.get("/logout", logout);
+
+
+
+
+
+// Use it like this with your field names and folders
+const uploadToS3 = s3UploadMiddleware(
+  ['users'],       // folderNames
+  ['profilePicture'], // filePrefixes (form field names)
+);
+
+router.patch('/update-profile',auth, uploadToS3, updateUserProfile);
 
 module.exports = router;

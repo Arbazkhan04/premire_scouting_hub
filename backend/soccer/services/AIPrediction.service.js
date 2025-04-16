@@ -384,10 +384,10 @@ const deleteAIPrediction = async (fixtureId) => {
 const getAllUpcomingFixturesPredictions = async () => {
   try {
     const today = new Date();
-
+    today.setHours(0, 0, 0, 0); // normalize to 00:00:00
     // Fetch predictions where fixture date is greater than today
     const upcomingPredictions = await AIPrediction.find({
-      "match.date": { $gt: today },
+      "match.date": { $gte: today },
     });
 
     return upcomingPredictions;
